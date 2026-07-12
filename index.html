@@ -8,16 +8,24 @@
     content="width=device-width, initial-scale=1.0"
   >
 
-  <meta name="theme-color" content="#c8102e">
+  <meta
+    name="theme-color"
+    content="#c8102e"
+  >
 
   <meta
     name="description"
     content="Internal operations hub for IGA Express Eight Mile Plains"
   >
 
-  <title>StoreFlow | IGA Express Eight Mile Plains</title>
+  <title>
+    StoreFlow | IGA Express Eight Mile Plains
+  </title>
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    rel="preconnect"
+    href="https://fonts.googleapis.com"
+  >
 
   <link
     rel="preconnect"
@@ -30,17 +38,105 @@
     rel="stylesheet"
   >
 
-  <link rel="stylesheet" href="styles.css">
+  <link
+    rel="stylesheet"
+    href="styles.css"
+  >
 </head>
 
 <body>
+
+  <!-- LOGIN SCREEN -->
+
+  <section
+    class="login-screen"
+    id="loginScreen"
+  >
+
+    <div class="login-card">
+
+      <div class="login-logo">
+        SF
+      </div>
+
+      <p class="section-label">
+        IGA EXPRESS EIGHT MILE PLAINS
+      </p>
+
+      <h1>
+        Welcome to StoreFlow
+      </h1>
+
+      <p class="login-description">
+        Sign in using your authorised staff account.
+      </p>
+
+      <form id="loginForm">
+
+        <label>
+
+          Email address
+
+          <input
+            id="loginEmail"
+            type="email"
+            autocomplete="email"
+            required
+            placeholder="name@example.com"
+          >
+
+        </label>
+
+        <label>
+
+          Password
+
+          <input
+            id="loginPassword"
+            type="password"
+            autocomplete="current-password"
+            required
+            placeholder="Enter your password"
+          >
+
+        </label>
+
+        <button
+          type="submit"
+          class="primary-button login-button"
+          id="loginButton"
+        >
+          Sign In
+        </button>
+
+      </form>
+
+      <p
+        class="login-error hidden"
+        id="loginError"
+      ></p>
+
+      <small>
+        Authorised store staff only.
+      </small>
+
+    </div>
+
+  </section>
+
+  <!-- MOBILE OVERLAY -->
 
   <div
     class="mobile-overlay"
     id="mobileOverlay"
   ></div>
 
-  <div class="app-shell">
+  <!-- APPLICATION -->
+
+  <div
+    class="app-shell hidden"
+    id="storeflowApp"
+  >
 
     <aside
       class="sidebar"
@@ -54,8 +150,15 @@
         </div>
 
         <div>
-          <h1>StoreFlow</h1>
-          <p>Store Operations Hub</p>
+
+          <h1>
+            StoreFlow
+          </h1>
+
+          <p>
+            Store Operations Hub
+          </p>
+
         </div>
 
       </div>
@@ -65,8 +168,15 @@
         <span class="store-dot"></span>
 
         <div>
-          <strong>IGA Express</strong>
-          <small>Eight Mile Plains</small>
+
+          <strong>
+            IGA Express
+          </strong>
+
+          <small>
+            Eight Mile Plains
+          </small>
+
         </div>
 
       </div>
@@ -118,12 +228,20 @@
       <div class="sidebar-footer">
 
         <span class="status-pill">
+
           <i></i>
+
           System online
+
         </span>
 
-        <p>Internal store platform</p>
-        <small>StoreFlow v1.1</small>
+        <p>
+          Internal store platform
+        </p>
+
+        <small>
+          StoreFlow v2.0
+        </small>
 
       </div>
 
@@ -159,33 +277,30 @@
 
         <div class="user-area">
 
-          <label class="role-control">
+          <div class="signed-in-user">
 
-            <span>Preview role</span>
+            <span id="signedInName">
+              Staff Member
+            </span>
 
-            <select id="roleSelect">
+            <small id="signedInRole">
+              Staff
+            </small>
 
-              <option value="staff">
-                Staff
-              </option>
+          </div>
 
-              <option
-                value="manager"
-                selected
-              >
-                Ayush — Manager
-              </option>
+          <button
+            class="secondary-button logout-button"
+            id="logoutButton"
+          >
+            Log Out
+          </button>
 
-              <option value="owner">
-                Owner
-              </option>
-
-            </select>
-
-          </label>
-
-          <div class="avatar">
-            AP
+          <div
+            class="avatar"
+            id="userAvatar"
+          >
+            SF
           </div>
 
         </div>
@@ -193,15 +308,6 @@
       </header>
 
       <section class="content">
-
-        <div class="prototype-banner">
-
-          <strong>Prototype:</strong>
-
-          Tasks are stored in this browser.
-          Shared live data and secure logins are the next upgrade.
-
-        </div>
 
         <!-- DASHBOARD -->
 
@@ -220,7 +326,7 @@
               ></span>
 
               <h3 id="greeting">
-                Good day, Ayush
+                Good day
               </h3>
 
               <p>
@@ -238,7 +344,9 @@
                 Weekly Planner
               </button>
 
-              <button class="primary-button open-task-modal">
+              <button
+                class="primary-button open-task-modal"
+              >
                 ＋ Add Task
               </button>
 
@@ -256,7 +364,9 @@
 
               <div>
 
-                <p>Active tasks</p>
+                <p>
+                  Active tasks
+                </p>
 
                 <strong id="totalCount">
                   0
@@ -278,7 +388,9 @@
 
               <div>
 
-                <p>Still to do</p>
+                <p>
+                  Still to do
+                </p>
 
                 <strong id="todoCount">
                   0
@@ -300,7 +412,9 @@
 
               <div>
 
-                <p>Completed</p>
+                <p>
+                  Completed
+                </p>
 
                 <strong id="completedCount">
                   0
@@ -322,7 +436,9 @@
 
               <div>
 
-                <p>High priority</p>
+                <p>
+                  High priority
+                </p>
 
                 <strong id="highCount">
                   0
@@ -464,7 +580,9 @@
 
             </div>
 
-            <button class="primary-button open-task-modal">
+            <button
+              class="primary-button open-task-modal"
+            >
               ＋ Add Task
             </button>
 
@@ -502,7 +620,9 @@
 
             </div>
 
-            <button class="primary-button open-task-modal">
+            <button
+              class="primary-button open-task-modal"
+            >
               ＋ Add Task
             </button>
 
@@ -818,19 +938,6 @@
 
         </div>
 
-        <label>
-
-          Added by *
-
-          <input
-            id="taskCreatedBy"
-            required
-            maxlength="60"
-            value="Ayush"
-          >
-
-        </label>
-
         <div class="modal-actions">
 
           <button
@@ -861,6 +968,10 @@
     class="toast hidden"
     role="status"
   ></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <script src="config.js"></script>
 
   <script src="app.js"></script>
 

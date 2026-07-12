@@ -1,80 +1,41 @@
-const STORAGE_KEY = "storeflow_tasks_v1";
-
-const starterTasks = [
-  {
-    id: crypto.randomUUID(),
-    title: "Fill front drinks fridge",
-    description:
-      "Face all lines and keep promotional products visible.",
-    department: "Grocery",
-    priority: "high",
-    dueDate: new Date().toISOString().slice(0, 10),
-    assignedTo: "Evening staff",
-    createdBy: "Ayush",
-    createdAt: new Date().toISOString(),
-    status: "todo",
-    completedBy: "",
-    completedAt: "",
-    archived: false
-  },
-  {
-    id: crypto.randomUUID(),
-    title: "Check dairy expiry dates",
-    description:
-      "Use FIFO rotation and report products expiring within two days.",
-    department: "Dairy",
-    priority: "medium",
-    dueDate: "",
-    assignedTo: "Morning staff",
-    createdBy: "Ayush",
-    createdAt: new Date().toISOString(),
-    status: "todo",
-    completedBy: "",
-    completedAt: "",
-    archived: false
-  }
-];
-
-let tasks = loadTasks();
-let currentView = "dashboard";
-
-function loadTasks() {
-  try {
-    const savedTasks = localStorage.getItem(STORAGE_KEY);
-
-    if (savedTasks) {
-      return JSON.parse(savedTasks);
+const supabaseClient =
+  window.supabase.createClient(
+    STOREFLOW_CONFIG.supabaseUrl,
+    STOREFLOW_CONFIG.supabasePublishableKey,
+    {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true
+      }
     }
-
-    return starterTasks;
-  } catch (error) {
-    console.error("Could not load tasks:", error);
-    return starterTasks;
-  }
-}
-
-function saveTasks() {
-  localStorage.setItem(
-    STORAGE_KEY,
-    JSON.stringify(tasks)
   );
+
+let tasks = [];
+let profiles = [];
+let currentUser = null;
+let currentProfile = null;
+let currentView = "dashboard";
+let realtimeChannel = null;
+let toastTimer = null;
+
+function getElement(id) {
+  return document.getElementById(id);
 }
 
-function getCurrentRole() {
-  return document.getElementById("roleSelect").value;
+function showElement(id) {
+  getElement(id)?.classList.remove("hidden");
 }
 
-function canManageTasks() {
-  return ["manager", "owner"].includes(
-    getCurrentRole()
-  );
+function hideElement(id) {
+  getElement(id)?.classList.add("hidden");
 }
 
 function escapeHtml(value = "") {
   return String(value).replace(
     /[&<>"']/g,
     character => {
-      const characters = {
+      const replacements = {
         "&": "&amp;",
         "<": "&lt;",
         ">": "&gt;",
@@ -82,9 +43,49 @@ function escapeHtml(value = "") {
         "'": "&#039;"
       };
 
-      return characters[character];
+      return replacements[character];
     }
   );
+}
+
+function canManageTasks() {
+  return (
+    currentProfile?.role === "manager" ||
+    currentProfile?.role === "owner"
+  );
+}
+
+function getProfileName(userId) {
+  if (!userId) {
+    return "";
+  }
+
+  const profile =
+    profiles.find(
+      item => item.id === userId
+    );
+
+  return (
+    profile?.full_name ||
+    "Staff member"
+  );
+}
+
+function getInitials(name = "") {
+  const words =
+    name
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean);
+
+  if (!words.length) {
+    return "SF";
+  }
+
+  return words
+    .slice(0, 2)
+    .map(word => word[0].toUpperCase())
+    .join("");
 }
 
 function formatDate(value) {
@@ -122,7 +123,259 @@ function formatDateTime(value) {
   );
 }
 
+function setGreeting() {
+  const hour =
+    new Date().getHours();
+
+  let greeting =
+    "Good evening";
+
+  if (hour < 12) {
+    greeting =
+      "Good morning";
+  } else if (hour < 17) {
+    greeting =
+      "Good afternoon";
+  }
+
+  const firstName =
+    currentProfile?.full_name
+      ?.trim()
+      ?.split(" ")[0] ||
+    "Team";
+
+  getElement("greeting").textContent =
+    `${greeting}, ${firstName}`;
+
+  getElement("todayDate").textContent =
+    new Date()
+      .toLocaleDateString(
+        "en-AU",
+        {
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+          year: "numeric"
+        }
+      )
+      .toUpperCase();
+}
+
+async function signIn(event) {
+  event.preventDefault();
+
+  const email =
+    getElement("loginEmail")
+      .value
+      .trim();
+
+  const password =
+    getElement("loginPassword")
+      .value;
+
+  const button =
+    getElement("loginButton");
+
+  const errorBox =
+    getElement("loginError");
+
+  errorBox.textContent = "";
+  errorBox.classList.add("hidden");
+
+  button.textContent =
+    "Signing In...";
+
+  button.classList.add(
+    "loading-button"
+  );
+
+  const { error } =
+    await supabaseClient.auth
+      .signInWithPassword({
+        email,
+        password
+      });
+
+  button.textContent =
+    "Sign In";
+
+  button.classList.remove(
+    "loading-button"
+  );
+
+  if (error) {
+    errorBox.textContent =
+      error.message;
+
+    errorBox.classList.remove(
+      "hidden"
+    );
+  }
+}
+
+async function signOut() {
+  const { error } =
+    await supabaseClient.auth
+      .signOut();
+
+  if (error) {
+    showToast(error.message);
+  }
+}
+
+async function loadCurrentProfile() {
+  const { data, error } =
+    await supabaseClient
+      .from("profiles")
+      .select(
+        "id, full_name, role, active"
+      )
+      .eq(
+        "id",
+        currentUser.id
+      )
+      .single();
+
+  if (error) {
+    console.error(error);
+
+    showToast(
+      "Your profile could not be loaded."
+    );
+
+    return false;
+  }
+
+  if (!data.active) {
+    await signOut();
+
+    showToast(
+      "Your StoreFlow account is inactive."
+    );
+
+    return false;
+  }
+
+  currentProfile = data;
+
+  updateUserDisplay();
+
+  return true;
+}
+
+function updateUserDisplay() {
+  const fullName =
+    currentProfile?.full_name ||
+    "Staff Member";
+
+  getElement("signedInName").textContent =
+    fullName;
+
+  getElement("signedInRole").textContent =
+    currentProfile?.role ||
+    "staff";
+
+  getElement("userAvatar").textContent =
+    getInitials(fullName);
+
+  document
+    .querySelectorAll(
+      '[data-view="archive"]'
+    )
+    .forEach(button => {
+      button.style.display =
+        canManageTasks()
+          ? ""
+          : "none";
+    });
+}
+
+async function loadProfiles() {
+  const { data, error } =
+    await supabaseClient
+      .from("profiles")
+      .select(
+        "id, full_name, role, active"
+      )
+      .eq(
+        "active",
+        true
+      )
+      .order("full_name");
+
+  if (error) {
+    console.error(error);
+    profiles = [];
+    return;
+  }
+
+  profiles = data || [];
+}
+
+async function loadTasks() {
+  const { data, error } =
+    await supabaseClient
+      .from("tasks")
+      .select("*")
+      .order(
+        "created_at",
+        {
+          ascending: false
+        }
+      );
+
+  if (error) {
+    console.error(error);
+
+    showToast(
+      `Could not load tasks: ${error.message}`
+    );
+
+    return;
+  }
+
+  tasks =
+    (data || []).map(task => ({
+      id: task.id,
+      title: task.title,
+      description:
+        task.description || "",
+      department:
+        task.department,
+      priority:
+        task.priority,
+      dueDate:
+        task.due_date || "",
+      assignedTo:
+        task.assigned_to || "",
+      createdBy:
+        task.created_by,
+      createdAt:
+        task.created_at,
+      status:
+        task.status,
+      completedBy:
+        task.completed_by,
+      completedAt:
+        task.completed_at,
+      archived:
+        task.archived
+    }));
+
+  renderWebsite();
+}
+
 function createTaskCard(task) {
+  const createdByName =
+    getProfileName(
+      task.createdBy
+    );
+
+  const completedByName =
+    getProfileName(
+      task.completedBy
+    );
+
   const completeButton =
     task.status === "todo" &&
     !task.archived
@@ -138,7 +391,8 @@ function createTaskCard(task) {
 
   const reopenButton =
     task.status === "completed" &&
-    !task.archived
+    !task.archived &&
+    canManageTasks()
       ? `
         <button
           class="secondary-button"
@@ -187,8 +441,16 @@ function createTaskCard(task) {
       class="
         task-card
         ${task.priority}
-        ${task.status === "completed" ? "completed" : ""}
-        ${task.archived ? "archived" : ""}
+        ${
+          task.status === "completed"
+            ? "completed"
+            : ""
+        }
+        ${
+          task.archived
+            ? "archived"
+            : ""
+        }
       "
     >
 
@@ -247,14 +509,14 @@ function createTaskCard(task) {
         </span>
 
         <span>
-          ＋ ${escapeHtml(task.createdBy)}
+          ＋ ${escapeHtml(createdByName)}
         </span>
 
         ${
           task.completedBy
             ? `
               <span>
-                ✅ ${escapeHtml(task.completedBy)}
+                ✅ ${escapeHtml(completedByName)}
                 ·
                 ${formatDateTime(task.completedAt)}
               </span>
@@ -277,9 +539,12 @@ function createTaskCard(task) {
   `;
 }
 
-function renderTaskList(elementId, taskList) {
+function renderTaskList(
+  elementId,
+  taskList
+) {
   const element =
-    document.getElementById(elementId);
+    getElement(elementId);
 
   if (!taskList.length) {
     element.innerHTML = `
@@ -298,7 +563,9 @@ function renderTaskList(elementId, taskList) {
   }
 
   element.innerHTML =
-    taskList.map(createTaskCard).join("");
+    taskList
+      .map(createTaskCard)
+      .join("");
 }
 
 function renderWeeklyPlanner() {
@@ -312,155 +579,160 @@ function renderWeeklyPlanner() {
     "Saturday"
   ];
 
-  const today = new Date();
+  const today =
+    new Date();
 
-  const startOfWeek = new Date(today);
+  const startOfWeek =
+    new Date(today);
 
   startOfWeek.setDate(
-    today.getDate() - today.getDay()
+    today.getDate() -
+    today.getDay()
   );
 
-  document.getElementById("weekBoard").innerHTML =
-    days.map((dayName, dayIndex) => {
-      const date = new Date(startOfWeek);
+  getElement("weekBoard").innerHTML =
+    days.map(
+      (dayName, index) => {
+        const date =
+          new Date(startOfWeek);
 
-      date.setDate(
-        startOfWeek.getDate() + dayIndex
-      );
-
-      const dateKey =
-        date.toISOString().slice(0, 10);
-
-      const tasksForDay = tasks.filter(task => {
-        return (
-          !task.archived &&
-          task.dueDate === dateKey
+        date.setDate(
+          startOfWeek.getDate() +
+          index
         );
-      });
 
-      const taskCards = tasksForDay.length
-        ? tasksForDay.map(task => {
-            return `
-              <div
-                class="
-                  planner-card
-                  ${
-                    task.status === "completed"
-                      ? "done"
-                      : ""
-                  }
-                "
-              >
+        const dateKey =
+          date
+            .toISOString()
+            .slice(0, 10);
 
-                <h4>
-                  ${escapeHtml(task.title)}
-                </h4>
+        const dayTasks =
+          tasks.filter(task => {
+            return (
+              !task.archived &&
+              task.dueDate === dateKey
+            );
+          });
 
-                <p>
-                  ${escapeHtml(task.assignedTo || "Anyone")}
-                  ·
-                  ${task.priority}
-                </p>
+        const taskHtml =
+          dayTasks.length
+            ? dayTasks.map(task => {
+                return `
+                  <div
+                    class="
+                      planner-card
+                      ${
+                        task.status === "completed"
+                          ? "done"
+                          : ""
+                      }
+                    "
+                  >
 
+                    <h4>
+                      ${escapeHtml(task.title)}
+                    </h4>
+
+                    <p>
+                      ${escapeHtml(task.assignedTo || "Anyone")}
+                      ·
+                      ${task.priority}
+                    </p>
+
+                  </div>
+                `;
+              }).join("")
+            : `
+              <div class="empty-day">
+                No scheduled tasks
               </div>
             `;
-          }).join("")
-        : `
-          <div class="empty-day">
-            No scheduled tasks
-          </div>
+
+        return `
+          <section class="day-column">
+
+            <div class="day-header">
+
+              <strong>
+                ${dayName}
+              </strong>
+
+              <small>
+                ${
+                  date.toLocaleDateString(
+                    "en-AU",
+                    {
+                      day: "numeric",
+                      month: "short"
+                    }
+                  )
+                }
+              </small>
+
+            </div>
+
+            <div class="day-tasks">
+              ${taskHtml}
+            </div>
+
+          </section>
         `;
-
-      return `
-        <section class="day-column">
-
-          <div class="day-header">
-
-            <strong>
-              ${dayName}
-            </strong>
-
-            <small>
-              ${
-                date.toLocaleDateString(
-                  "en-AU",
-                  {
-                    day: "numeric",
-                    month: "short"
-                  }
-                )
-              }
-            </small>
-
-          </div>
-
-          <div class="day-tasks">
-            ${taskCards}
-          </div>
-
-        </section>
-      `;
-    }).join("");
+      }
+    ).join("");
 }
 
 function renderFilteredTasks() {
-  const searchValue =
-    document
-      .getElementById("searchInput")
+  const search =
+    getElement("searchInput")
       .value
       .trim()
       .toLowerCase();
 
-  const departmentValue =
-    document
-      .getElementById("departmentFilter")
+  const department =
+    getElement("departmentFilter")
       .value;
 
-  const statusValue =
-    document
-      .getElementById("statusFilter")
+  const status =
+    getElement("statusFilter")
       .value;
 
-  const priorityValue =
-    document
-      .getElementById("priorityFilter")
+  const priority =
+    getElement("priorityFilter")
       .value;
 
-  const filteredTasks = tasks.filter(task => {
-    if (task.archived) {
-      return false;
-    }
+  const filteredTasks =
+    tasks.filter(task => {
+      if (task.archived) {
+        return false;
+      }
 
-    const searchableText = `
-      ${task.title}
-      ${task.description}
-      ${task.createdBy}
-      ${task.assignedTo}
-    `.toLowerCase();
+      const searchableText = `
+        ${task.title}
+        ${task.description}
+        ${task.assignedTo}
+        ${getProfileName(task.createdBy)}
+        ${getProfileName(task.completedBy)}
+      `.toLowerCase();
 
-    const matchesSearch =
-      !searchValue ||
-      searchableText.includes(searchValue);
-
-    const matchesDepartment =
-      departmentValue === "all" ||
-      task.department === departmentValue;
-
-    const matchesStatus =
-      statusValue === "all" ||
-      task.status === statusValue;
-
-    const matchesPriority =
-      priorityValue === "all" ||
-      task.priority === priorityValue;
-
-    return (
-      matchesSearch &&
-      matchesDepartment &&
-      matchesStatus &&
-      matchesPriority
-    );
-  });
+      return (
+        (
+          !search ||
+          searchableText.includes(search)
+        ) &&
+        (
+          department === "all" ||
+          task.department === department
+        ) &&
+        (
+          status === "all" ||
+          task.status === status
+        ) &&
+        (
+          priority === "all" ||
+          task.priority === priority
+        )
+      );
+    });
 
   renderTaskList(
     "allTaskList",
@@ -470,7 +742,9 @@ function renderFilteredTasks() {
 
 function renderWebsite() {
   const activeTasks =
-    tasks.filter(task => !task.archived);
+    tasks.filter(
+      task => !task.archived
+    );
 
   const todoTasks =
     activeTasks.filter(
@@ -483,28 +757,25 @@ function renderWebsite() {
     );
 
   const archivedTasks =
-    tasks.filter(task => task.archived);
+    tasks.filter(
+      task => task.archived
+    );
 
-  document.getElementById(
-    "totalCount"
-  ).textContent = activeTasks.length;
+  getElement("totalCount").textContent =
+    activeTasks.length;
 
-  document.getElementById(
-    "todoCount"
-  ).textContent = todoTasks.length;
+  getElement("todoCount").textContent =
+    todoTasks.length;
 
-  document.getElementById(
-    "completedCount"
-  ).textContent = completedTasks.length;
+  getElement("completedCount").textContent =
+    completedTasks.length;
 
-  document.getElementById(
-    "highCount"
-  ).textContent =
+  getElement("highCount").textContent =
     todoTasks.filter(
       task => task.priority === "high"
     ).length;
 
-  const completionPercentage =
+  const percentage =
     activeTasks.length
       ? Math.round(
           (
@@ -514,52 +785,47 @@ function renderWebsite() {
         )
       : 0;
 
-  document.getElementById(
-    "progressPercent"
-  ).textContent =
-    `${completionPercentage}%`;
+  getElement("progressPercent").textContent =
+    `${percentage}%`;
 
-  document.getElementById(
-    "progressRing"
-  ).style.setProperty(
-    "--p",
-    completionPercentage
-  );
+  getElement("progressRing")
+    .style
+    .setProperty(
+      "--p",
+      percentage
+    );
 
-  document.getElementById(
-    "progressText"
-  ).textContent =
-    completionPercentage === 100
-      ? "Excellent — every active task is complete."
-      : `${completedTasks.length} of ${activeTasks.length} active tasks completed.`;
+  getElement("progressText").textContent =
+    activeTasks.length === 0
+      ? "No active tasks yet."
+      : percentage === 100
+        ? "Excellent — every active task is complete."
+        : `${completedTasks.length} of ${activeTasks.length} active tasks completed.`;
 
-  document.getElementById(
-    "summaryTodo"
-  ).textContent =
+  getElement("summaryTodo").textContent =
     todoTasks.length;
 
-  document.getElementById(
-    "summaryDone"
-  ).textContent =
+  getElement("summaryDone").textContent =
     completedTasks.length;
 
-  const sortedDashboardTasks =
-    [...todoTasks].sort((firstTask, secondTask) => {
-      const priorityOrder = {
-        high: 0,
-        medium: 1,
-        low: 2
-      };
+  const priorityOrder = {
+    high: 0,
+    medium: 1,
+    low: 2
+  };
 
-      return (
-        priorityOrder[firstTask.priority] -
-        priorityOrder[secondTask.priority]
-      );
-    });
+  const dashboardTasks =
+    [...todoTasks]
+      .sort(
+        (first, second) =>
+          priorityOrder[first.priority] -
+          priorityOrder[second.priority]
+      )
+      .slice(0, 6);
 
   renderTaskList(
     "dashboardTaskList",
-    sortedDashboardTasks.slice(0, 6)
+    dashboardTasks
   );
 
   renderTaskList(
@@ -574,280 +840,294 @@ function renderWebsite() {
 
   renderFilteredTasks();
   renderWeeklyPlanner();
-
-  document
-    .querySelectorAll('[data-view="archive"]')
-    .forEach(button => {
-      button.style.display =
-        canManageTasks()
-          ? ""
-          : "none";
-    });
-
-  if (
-    currentView === "archive" &&
-    !canManageTasks()
-  ) {
-    switchView("dashboard");
-  }
 }
 
-function addTask(event) {
+async function addTask(event) {
   event.preventDefault();
 
-  const newTask = {
-    id: crypto.randomUUID(),
+  const title =
+    getElement("taskTitle")
+      .value
+      .trim();
 
-    title:
-      document
-        .getElementById("taskTitle")
-        .value
-        .trim(),
+  const description =
+    getElement("taskDescription")
+      .value
+      .trim();
 
-    description:
-      document
-        .getElementById("taskDescription")
-        .value
-        .trim(),
+  const department =
+    getElement("taskDepartment")
+      .value;
 
-    department:
-      document
-        .getElementById("taskDepartment")
-        .value,
+  const priority =
+    getElement("taskPriority")
+      .value;
 
-    priority:
-      document
-        .getElementById("taskPriority")
-        .value,
+  const dueDate =
+    getElement("taskDueDate")
+      .value || null;
 
-    dueDate:
-      document
-        .getElementById("taskDueDate")
-        .value,
+  const assignedTo =
+    getElement("taskAssignedTo")
+      .value
+      .trim();
 
-    assignedTo:
-      document
-        .getElementById("taskAssignedTo")
-        .value
-        .trim(),
+  const { error } =
+    await supabaseClient
+      .from("tasks")
+      .insert({
+        title,
+        description:
+          description || null,
+        department,
+        priority,
+        due_date:
+          dueDate,
+        assigned_to:
+          assignedTo || null,
+        created_by:
+          currentUser.id,
+        status:
+          "todo",
+        archived:
+          false
+      });
 
-    createdBy:
-      document
-        .getElementById("taskCreatedBy")
-        .value
-        .trim(),
+  if (error) {
+    console.error(error);
 
-    createdAt:
-      new Date().toISOString(),
+    showToast(
+      `Could not add task: ${error.message}`
+    );
 
-    status: "todo",
-    completedBy: "",
-    completedAt: "",
-    archived: false
-  };
+    return;
+  }
 
-  tasks.unshift(newTask);
-
-  saveTasks();
   closeTaskModal();
-  renderWebsite();
 
   showToast(
     "Task added successfully."
   );
+
+  await loadTasks();
 }
 
-window.completeTask = function(taskId) {
-  const completedBy = prompt(
-    "Who completed this task?",
-    "Staff member"
-  );
+window.completeTask =
+  async function(taskId) {
+    const confirmed =
+      confirm(
+        "Mark this task as completed?"
+      );
 
-  if (!completedBy) {
-    return;
-  }
-
-  tasks = tasks.map(task => {
-    if (task.id !== taskId) {
-      return task;
+    if (!confirmed) {
+      return;
     }
 
-    return {
-      ...task,
-      status: "completed",
-      completedBy:
-        completedBy.trim(),
-      completedAt:
-        new Date().toISOString()
-    };
-  });
+    const { error } =
+      await supabaseClient
+        .from("tasks")
+        .update({
+          status:
+            "completed",
+          completed_by:
+            currentUser.id,
+          completed_at:
+            new Date().toISOString()
+        })
+        .eq(
+          "id",
+          taskId
+        );
 
-  saveTasks();
-  renderWebsite();
+    if (error) {
+      showToast(
+        `Could not complete task: ${error.message}`
+      );
 
-  showToast(
-    "Task marked as completed."
-  );
-};
-
-window.reopenTask = function(taskId) {
-  tasks = tasks.map(task => {
-    if (task.id !== taskId) {
-      return task;
+      return;
     }
 
-    return {
-      ...task,
-      status: "todo",
-      completedBy: "",
-      completedAt: ""
-    };
-  });
-
-  saveTasks();
-  renderWebsite();
-
-  showToast(
-    "Task reopened."
-  );
-};
-
-window.archiveTask = function(taskId) {
-  if (!canManageTasks()) {
     showToast(
-      "Only the manager or owner can archive tasks."
+      "Task marked as completed."
     );
 
-    return;
-  }
+    await loadTasks();
+  };
 
-  const confirmed = confirm(
-    "Archive this task?"
-  );
-
-  if (!confirmed) {
-    return;
-  }
-
-  tasks = tasks.map(task => {
-    if (task.id !== taskId) {
-      return task;
+window.reopenTask =
+  async function(taskId) {
+    if (!canManageTasks()) {
+      return;
     }
 
-    return {
-      ...task,
-      archived: true
-    };
-  });
+    const { error } =
+      await supabaseClient
+        .from("tasks")
+        .update({
+          status:
+            "todo",
+          completed_by:
+            null,
+          completed_at:
+            null
+        })
+        .eq(
+          "id",
+          taskId
+        );
 
-  saveTasks();
-  renderWebsite();
-
-  showToast(
-    "Task moved to archive."
-  );
-};
-
-window.restoreTask = function(taskId) {
-  if (!canManageTasks()) {
-    return;
-  }
-
-  tasks = tasks.map(task => {
-    if (task.id !== taskId) {
-      return task;
+    if (error) {
+      showToast(error.message);
+      return;
     }
 
-    return {
-      ...task,
-      archived: false
-    };
-  });
-
-  saveTasks();
-  renderWebsite();
-
-  showToast(
-    "Task restored."
-  );
-};
-
-window.deleteTask = function(taskId) {
-  if (!canManageTasks()) {
     showToast(
-      "Only the manager or owner can delete tasks."
+      "Task reopened."
     );
 
-    return;
-  }
+    await loadTasks();
+  };
 
-  const confirmed = confirm(
-    "Permanently delete this task? This cannot be undone."
-  );
+window.archiveTask =
+  async function(taskId) {
+    if (!canManageTasks()) {
+      return;
+    }
 
-  if (!confirmed) {
-    return;
-  }
+    if (
+      !confirm(
+        "Archive this task?"
+      )
+    ) {
+      return;
+    }
 
-  tasks = tasks.filter(
-    task => task.id !== taskId
-  );
+    const { error } =
+      await supabaseClient
+        .from("tasks")
+        .update({
+          archived:
+            true
+        })
+        .eq(
+          "id",
+          taskId
+        );
 
-  saveTasks();
-  renderWebsite();
+    if (error) {
+      showToast(error.message);
+      return;
+    }
 
-  showToast(
-    "Task permanently deleted."
-  );
-};
+    showToast(
+      "Task moved to archive."
+    );
+
+    await loadTasks();
+  };
+
+window.restoreTask =
+  async function(taskId) {
+    if (!canManageTasks()) {
+      return;
+    }
+
+    const { error } =
+      await supabaseClient
+        .from("tasks")
+        .update({
+          archived:
+            false
+        })
+        .eq(
+          "id",
+          taskId
+        );
+
+    if (error) {
+      showToast(error.message);
+      return;
+    }
+
+    showToast(
+      "Task restored."
+    );
+
+    await loadTasks();
+  };
+
+window.deleteTask =
+  async function(taskId) {
+    if (!canManageTasks()) {
+      return;
+    }
+
+    if (
+      !confirm(
+        "Permanently delete this task?"
+      )
+    ) {
+      return;
+    }
+
+    const { error } =
+      await supabaseClient
+        .from("tasks")
+        .delete()
+        .eq(
+          "id",
+          taskId
+        );
+
+    if (error) {
+      showToast(error.message);
+      return;
+    }
+
+    showToast(
+      "Task permanently deleted."
+    );
+
+    await loadTasks();
+  };
 
 function openTaskModal() {
-  document
-    .getElementById("taskModal")
-    .classList
-    .remove("hidden");
+  showElement("taskModal");
 
-  document
-    .getElementById("taskTitle")
-    .focus();
+  getElement("taskTitle").focus();
 }
 
 function closeTaskModal() {
-  document
-    .getElementById("taskModal")
-    .classList
-    .add("hidden");
+  hideElement("taskModal");
 
-  document
-    .getElementById("taskForm")
-    .reset();
+  getElement("taskForm").reset();
 
-  document
-    .getElementById("taskPriority")
-    .value = "medium";
-
-  const currentRole =
-    getCurrentRole();
-
-  document
-    .getElementById("taskCreatedBy")
-    .value =
-      currentRole === "owner"
-        ? "Owner"
-        : currentRole === "manager"
-          ? "Ayush"
-          : "Staff member";
+  getElement("taskPriority").value =
+    "medium";
 }
 
 function switchView(viewName) {
-  currentView = viewName;
+  if (
+    viewName === "archive" &&
+    !canManageTasks()
+  ) {
+    return;
+  }
 
-  const viewTitles = {
-    dashboard: "Dashboard",
-    planner: "Weekly Planner",
-    tasks: "All Tasks",
-    completed: "Completed Tasks",
-    archive: "Archive"
+  currentView =
+    viewName;
+
+  const titles = {
+    dashboard:
+      "Dashboard",
+    planner:
+      "Weekly Planner",
+    tasks:
+      "All Tasks",
+    completed:
+      "Completed Tasks",
+    archive:
+      "Archive"
   };
 
   document
@@ -862,8 +1142,7 @@ function switchView(viewName) {
       button.classList.remove("active");
     });
 
-  document
-    .getElementById(`${viewName}View`)
+  getElement(`${viewName}View`)
     .classList
     .add("active");
 
@@ -874,76 +1153,133 @@ function switchView(viewName) {
     ?.classList
     .add("active");
 
-  document
-    .getElementById("pageTitle")
-    .textContent =
-      viewTitles[viewName];
+  getElement("pageTitle").textContent =
+    titles[viewName];
 
-  document
-    .getElementById("sidebar")
+  getElement("sidebar")
     .classList
     .remove("open");
 
-  document
-    .getElementById("mobileOverlay")
+  getElement("mobileOverlay")
     .classList
     .remove("show");
 }
 
-let toastTimer;
+function subscribeToTaskChanges() {
+  if (realtimeChannel) {
+    supabaseClient
+      .removeChannel(
+        realtimeChannel
+      );
+  }
+
+  realtimeChannel =
+    supabaseClient
+      .channel(
+        "storeflow-task-changes"
+      )
+      .on(
+        "postgres_changes",
+        {
+          event:
+            "*",
+          schema:
+            "public",
+          table:
+            "tasks"
+        },
+        async () => {
+          await loadTasks();
+        }
+      )
+      .subscribe();
+}
+
+async function showStoreflowApp(user) {
+  currentUser =
+    user;
+
+  const profileLoaded =
+    await loadCurrentProfile();
+
+  if (!profileLoaded) {
+    return;
+  }
+
+  await loadProfiles();
+  await loadTasks();
+
+  setGreeting();
+  updateUserDisplay();
+  subscribeToTaskChanges();
+
+  hideElement("loginScreen");
+  showElement("storeflowApp");
+}
+
+function showLoginScreen() {
+  currentUser =
+    null;
+
+  currentProfile =
+    null;
+
+  tasks =
+    [];
+
+  profiles =
+    [];
+
+  if (realtimeChannel) {
+    supabaseClient
+      .removeChannel(
+        realtimeChannel
+      );
+
+    realtimeChannel =
+      null;
+  }
+
+  hideElement("storeflowApp");
+  showElement("loginScreen");
+
+  getElement("loginForm").reset();
+}
 
 function showToast(message) {
   const toast =
-    document.getElementById("toast");
+    getElement("toast");
 
-  toast.textContent = message;
+  toast.textContent =
+    message;
 
-  toast.classList.remove("hidden");
+  toast.classList.remove(
+    "hidden"
+  );
 
-  clearTimeout(toastTimer);
+  clearTimeout(
+    toastTimer
+  );
 
-  toastTimer = setTimeout(() => {
-    toast.classList.add("hidden");
-  }, 2500);
+  toastTimer =
+    setTimeout(() => {
+      toast.classList.add(
+        "hidden"
+      );
+    }, 3000);
 }
 
-function setGreeting() {
-  const currentHour =
-    new Date().getHours();
+getElement("loginForm")
+  .addEventListener(
+    "submit",
+    signIn
+  );
 
-  let greetingText =
-    "Good evening";
-
-  if (currentHour < 12) {
-    greetingText =
-      "Good morning";
-  } else if (currentHour < 17) {
-    greetingText =
-      "Good afternoon";
-  }
-
-  document
-    .getElementById("greeting")
-    .textContent =
-      `${greetingText}, Ayush`;
-
-  document
-    .getElementById("todayDate")
-    .textContent =
-      new Date()
-        .toLocaleDateString(
-          "en-AU",
-          {
-            weekday: "long",
-            day: "numeric",
-            month: "long",
-            year: "numeric"
-          }
-        )
-        .toUpperCase();
-}
-
-/* NAVIGATION */
+getElement("logoutButton")
+  .addEventListener(
+    "click",
+    signOut
+  );
 
 document
   .querySelectorAll(".nav-link")
@@ -971,8 +1307,6 @@ document
     );
   });
 
-/* ADD TASK MODAL */
-
 document
   .querySelectorAll(".open-task-modal")
   .forEach(button => {
@@ -982,121 +1316,128 @@ document
     );
   });
 
-document
-  .getElementById("closeModal")
+getElement("closeModal")
   .addEventListener(
     "click",
     closeTaskModal
   );
 
-document
-  .getElementById("cancelModal")
+getElement("cancelModal")
   .addEventListener(
     "click",
     closeTaskModal
   );
 
-document
-  .getElementById("taskModal")
+getElement("taskModal")
   .addEventListener(
     "click",
     event => {
       if (
-        event.target.id === "taskModal"
+        event.target.id ===
+        "taskModal"
       ) {
         closeTaskModal();
       }
     }
   );
 
-document
-  .getElementById("taskForm")
+getElement("taskForm")
   .addEventListener(
     "submit",
     addTask
   );
 
-/* FILTERS */
-
-document
-  .getElementById("searchInput")
+getElement("searchInput")
   .addEventListener(
     "input",
     renderFilteredTasks
   );
 
-document
-  .getElementById("departmentFilter")
+getElement("departmentFilter")
   .addEventListener(
     "change",
     renderFilteredTasks
   );
 
-document
-  .getElementById("statusFilter")
+getElement("statusFilter")
   .addEventListener(
     "change",
     renderFilteredTasks
   );
 
-document
-  .getElementById("priorityFilter")
+getElement("priorityFilter")
   .addEventListener(
     "change",
     renderFilteredTasks
   );
 
-/* ROLE */
-
-document
-  .getElementById("roleSelect")
-  .addEventListener(
-    "change",
-    () => {
-      renderWebsite();
-
-      showToast(
-        `Role changed to ${getCurrentRole()}.`
-      );
-    }
-  );
-
-/* MOBILE MENU */
-
-document
-  .getElementById("menuButton")
+getElement("menuButton")
   .addEventListener(
     "click",
     () => {
-      document
-        .getElementById("sidebar")
+      getElement("sidebar")
         .classList
         .toggle("open");
 
-      document
-        .getElementById("mobileOverlay")
+      getElement("mobileOverlay")
         .classList
         .toggle("show");
     }
   );
 
-document
-  .getElementById("mobileOverlay")
+getElement("mobileOverlay")
   .addEventListener(
     "click",
     () => {
-      document
-        .getElementById("sidebar")
+      getElement("sidebar")
         .classList
         .remove("open");
 
-      document
-        .getElementById("mobileOverlay")
+      getElement("mobileOverlay")
         .classList
         .remove("show");
     }
   );
 
-setGreeting();
-saveTasks();
-renderWebsite();
+supabaseClient.auth
+  .onAuthStateChange(
+    async (
+      event,
+      session
+    ) => {
+      if (session?.user) {
+        await showStoreflowApp(
+          session.user
+        );
+      } else {
+        showLoginScreen();
+      }
+    }
+  );
+
+async function initialiseStoreflow() {
+  const {
+    data: {
+      session
+    },
+    error
+  } =
+    await supabaseClient.auth
+      .getSession();
+
+  if (error) {
+    console.error(error);
+    showLoginScreen();
+    return;
+  }
+
+  if (session?.user) {
+    await showStoreflowApp(
+      session.user
+    );
+  } else {
+    showLoginScreen();
+  }
+}
+
+initialiseStoreflow();
