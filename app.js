@@ -1,5 +1,5 @@
 /* =========================================
-   STOREFLOW — SUPABASE V4
+   STOREFLOW — SUPABASE V4.1
 ========================================= */
 
 const supabaseClient =
@@ -15,6 +15,10 @@ const supabaseClient =
     }
   );
 
+/* =========================================
+   GLOBAL STATE
+========================================= */
+
 let tasks = [];
 let profiles = [];
 
@@ -25,6 +29,10 @@ let currentView = "dashboard";
 let realtimeChannel = null;
 let toastTimer = null;
 let isInitialising = false;
+
+/* =========================================
+   ELEMENT HELPERS
+========================================= */
 
 function getElement(id) {
   return document.getElementById(id);
@@ -37,6 +45,10 @@ function showElement(id) {
 function hideElement(id) {
   getElement(id)?.classList.add("hidden");
 }
+
+/* =========================================
+   TEXT AND PERMISSION HELPERS
+========================================= */
 
 function escapeHtml(value = "") {
   return String(value).replace(
@@ -72,7 +84,10 @@ function getProfileName(userId) {
       item => item.id === userId
     );
 
-  return profile?.full_name || "Staff member";
+  return (
+    profile?.full_name ||
+    "Staff member"
+  );
 }
 
 function getAssignedProfileName(task) {
@@ -106,7 +121,9 @@ function getInitials(name = "") {
 
   return words
     .slice(0, 2)
-    .map(word => word[0].toUpperCase())
+    .map(word =>
+      word[0].toUpperCase()
+    )
     .join("");
 }
 
@@ -121,6 +138,10 @@ function formatRole(role) {
 
   return "Staff";
 }
+
+/* =========================================
+   DATE HELPERS
+========================================= */
 
 function formatDate(value) {
   if (!value) {
@@ -152,7 +173,9 @@ function formatDateTime(value) {
       hour: "numeric",
       minute: "2-digit"
     }
-  ).format(new Date(value));
+  ).format(
+    new Date(value)
+  );
 }
 
 function getLocalDateKey(date) {
@@ -210,6 +233,10 @@ function setGreeting() {
       .toUpperCase();
 }
 
+/* =========================================
+   USERNAME LOGIN
+========================================= */
+
 async function signIn(event) {
   event.preventDefault();
 
@@ -235,11 +262,15 @@ async function signIn(event) {
   const usernamePattern =
     /^[a-z0-9._-]+$/;
 
-  if (!usernamePattern.test(username)) {
+  if (
+    !usernamePattern.test(username)
+  ) {
     loginError.textContent =
       "Username can only contain letters, numbers, dots, dashes and underscores.";
 
-    loginError.classList.remove("hidden");
+    loginError.classList.remove(
+      "hidden"
+    );
 
     return;
   }
@@ -296,6 +327,7 @@ async function signOut() {
     getElement("logoutButton");
 
   logoutButton.disabled = true;
+
   logoutButton.textContent =
     "Logging Out...";
 
@@ -304,15 +336,25 @@ async function signOut() {
       .signOut();
 
   logoutButton.disabled = false;
+
   logoutButton.textContent =
     "Log Out";
 
   if (error) {
+    console.error(
+      "Logout error:",
+      error
+    );
+
     showToast(
       `Could not log out: ${error.message}`
     );
   }
 }
+
+/* =========================================
+   CURRENT PROFILE
+========================================= */
 
 async function loadCurrentProfile() {
   if (!currentUser) {
@@ -404,6 +446,10 @@ function updateUserDisplay() {
   }
 }
 
+/* =========================================
+   PROFILES
+========================================= */
+
 async function loadProfiles() {
   const { data, error } =
     await supabaseClient
@@ -411,7 +457,10 @@ async function loadProfiles() {
       .select(
         "id, full_name, role, active"
       )
-      .eq("active", true)
+      .eq(
+        "active",
+        true
+      )
       .order(
         "full_name",
         {
@@ -426,6 +475,7 @@ async function loadProfiles() {
     );
 
     profiles = [];
+
     return;
   }
 
@@ -473,6 +523,10 @@ function populateAssigneeDropdown() {
       ? oldValue
       : "";
 }
+
+/* =========================================
+   TASKS
+========================================= */
 
 async function loadTasks() {
   const { data, error } =
@@ -610,6 +664,10 @@ function sortTasks(taskList) {
     }
   );
 }
+
+/* =========================================
+   TASK CARDS
+========================================= */
 
 function createTaskCard(task) {
   const createdByName =
@@ -833,6 +891,10 @@ function renderTaskList(
       .join("");
 }
 
+/* =========================================
+   MY TASKS
+========================================= */
+
 function renderMyTasks() {
   if (!currentUser) {
     renderTaskList(
@@ -861,6 +923,10 @@ function renderMyTasks() {
     sortTasks(myTasks)
   );
 }
+
+/* =========================================
+   WEEKLY PLANNER
+========================================= */
 
 function renderWeeklyPlanner() {
   const board =
@@ -922,7 +988,8 @@ function renderWeeklyPlanner() {
             tasks.filter(task => {
               return (
                 !task.archived &&
-                task.dueDate === dateKey
+                task.dueDate ===
+                  dateKey
               );
             });
 
@@ -996,18 +1063,26 @@ function renderWeeklyPlanner() {
       .join("");
 }
 
+/* =========================================
+   FILTERED TASKS
+========================================= */
+
 function renderFilteredTasks() {
   const searchInput =
     getElement("searchInput");
 
   const departmentFilter =
-    getElement("departmentFilter");
+    getElement(
+      "departmentFilter"
+    );
 
   const statusFilter =
     getElement("statusFilter");
 
   const priorityFilter =
-    getElement("priorityFilter");
+    getElement(
+      "priorityFilter"
+    );
 
   if (
     !searchInput ||
@@ -1075,6 +1150,10 @@ function renderFilteredTasks() {
   );
 }
 
+/* =========================================
+   STAFF OVERVIEW
+========================================= */
+
 function calculateStaffMetrics(profile) {
   const assignedTasks =
     tasks.filter(task => {
@@ -1094,7 +1173,8 @@ function calculateStaffMetrics(profile) {
   const completedTasks =
     assignedTasks.filter(
       task =>
-        task.status === "completed"
+        task.status ===
+        "completed"
     );
 
   const highPriorityTasks =
@@ -1282,7 +1362,18 @@ function renderStaffOverview() {
     </article>
   `;
 
-  if (!profiles.length) {
+  /*
+    The store owner can access this page,
+    but is excluded from the performance list.
+  */
+
+  const overviewProfiles =
+    profiles.filter(
+      profile =>
+        profile.role !== "owner"
+    );
+
+  if (!overviewProfiles.length) {
     grid.innerHTML = `
       <div class="empty-state">
 
@@ -1290,7 +1381,7 @@ function renderStaffOverview() {
           No staff profiles found
         </strong>
 
-        Active profiles will appear here.
+        Active staff profiles will appear here.
 
       </div>
     `;
@@ -1298,8 +1389,8 @@ function renderStaffOverview() {
     return;
   }
 
-  const cards =
-    profiles
+  grid.innerHTML =
+    overviewProfiles
       .map(profile => {
         const metrics =
           calculateStaffMetrics(
@@ -1361,10 +1452,11 @@ function renderStaffOverview() {
         `;
       })
       .join("");
-
-  grid.innerHTML =
-    cards;
 }
+
+/* =========================================
+   MAIN RENDER
+========================================= */
 
 function renderWebsite() {
   const activeTasks =
@@ -1434,7 +1526,9 @@ function renderWebsite() {
     getElement("progressText")
       .textContent =
       "No active tasks yet.";
-  } else if (percentage === 100) {
+  } else if (
+    percentage === 100
+  ) {
     getElement("progressText")
       .textContent =
       "Excellent — every active task is complete.";
@@ -1474,6 +1568,10 @@ function renderWebsite() {
   renderStaffOverview();
   updateUserDisplay();
 }
+
+/* =========================================
+   ADD TASK
+========================================= */
 
 async function addTask(event) {
   event.preventDefault();
@@ -1549,6 +1647,7 @@ async function addTask(event) {
       );
 
   submitButton.disabled = true;
+
   submitButton.textContent =
     "Adding Task...";
 
@@ -1585,6 +1684,7 @@ async function addTask(event) {
       });
 
   submitButton.disabled = false;
+
   submitButton.textContent =
     "Add Task";
 
@@ -1609,6 +1709,10 @@ async function addTask(event) {
 
   await loadTasks();
 }
+
+/* =========================================
+   COMPLETE TASK
+========================================= */
 
 window.completeTask =
   async function(taskId) {
@@ -1646,11 +1750,12 @@ window.completeTask =
       return;
     }
 
-    if (
-      !confirm(
+    const confirmed =
+      confirm(
         "Mark this task as completed?"
-      )
-    ) {
+      );
+
+    if (!confirmed) {
       return;
     }
 
@@ -1674,6 +1779,11 @@ window.completeTask =
         );
 
     if (error) {
+      console.error(
+        "Complete task error:",
+        error
+      );
+
       showToast(
         `Could not complete task: ${error.message}`
       );
@@ -1687,6 +1797,10 @@ window.completeTask =
 
     await loadTasks();
   };
+
+/* =========================================
+   REOPEN TASK
+========================================= */
 
 window.reopenTask =
   async function(taskId) {
@@ -1717,6 +1831,11 @@ window.reopenTask =
         );
 
     if (error) {
+      console.error(
+        "Reopen task error:",
+        error
+      );
+
       showToast(
         `Could not reopen task: ${error.message}`
       );
@@ -1731,6 +1850,10 @@ window.reopenTask =
     await loadTasks();
   };
 
+/* =========================================
+   ARCHIVE TASK
+========================================= */
+
 window.archiveTask =
   async function(taskId) {
     if (!canManageTasks()) {
@@ -1741,11 +1864,12 @@ window.archiveTask =
       return;
     }
 
-    if (
-      !confirm(
+    const confirmed =
+      confirm(
         "Archive this task?"
-      )
-    ) {
+      );
+
+    if (!confirmed) {
       return;
     }
 
@@ -1753,7 +1877,8 @@ window.archiveTask =
       await supabaseClient
         .from("tasks")
         .update({
-          archived: true
+          archived:
+            true
         })
         .eq(
           "id",
@@ -1761,6 +1886,11 @@ window.archiveTask =
         );
 
     if (error) {
+      console.error(
+        "Archive task error:",
+        error
+      );
+
       showToast(
         `Could not archive task: ${error.message}`
       );
@@ -1775,6 +1905,10 @@ window.archiveTask =
     await loadTasks();
   };
 
+/* =========================================
+   RESTORE TASK
+========================================= */
+
 window.restoreTask =
   async function(taskId) {
     if (!canManageTasks()) {
@@ -1785,7 +1919,8 @@ window.restoreTask =
       await supabaseClient
         .from("tasks")
         .update({
-          archived: false
+          archived:
+            false
         })
         .eq(
           "id",
@@ -1793,6 +1928,11 @@ window.restoreTask =
         );
 
     if (error) {
+      console.error(
+        "Restore task error:",
+        error
+      );
+
       showToast(
         `Could not restore task: ${error.message}`
       );
@@ -1807,6 +1947,10 @@ window.restoreTask =
     await loadTasks();
   };
 
+/* =========================================
+   DELETE TASK
+========================================= */
+
 window.deleteTask =
   async function(taskId) {
     if (!canManageTasks()) {
@@ -1817,11 +1961,12 @@ window.deleteTask =
       return;
     }
 
-    if (
-      !confirm(
+    const confirmed =
+      confirm(
         "Permanently delete this task? This cannot be undone."
-      )
-    ) {
+      );
+
+    if (!confirmed) {
       return;
     }
 
@@ -1835,6 +1980,11 @@ window.deleteTask =
         );
 
     if (error) {
+      console.error(
+        "Delete task error:",
+        error
+      );
+
       showToast(
         `Could not delete task: ${error.message}`
       );
@@ -1848,6 +1998,10 @@ window.deleteTask =
 
     await loadTasks();
   };
+
+/* =========================================
+   TASK MODAL
+========================================= */
 
 function openTaskModal() {
   showElement("taskModal");
@@ -1870,6 +2024,10 @@ function closeTaskModal() {
     .value =
     "";
 }
+
+/* =========================================
+   NAVIGATION
+========================================= */
 
 function switchView(viewName) {
   const protectedViews = [
@@ -1957,6 +2115,10 @@ function switchView(viewName) {
     .remove("show");
 }
 
+/* =========================================
+   REALTIME
+========================================= */
+
 function subscribeToTaskChanges() {
   if (realtimeChannel) {
     supabaseClient
@@ -1973,9 +2135,14 @@ function subscribeToTaskChanges() {
       .on(
         "postgres_changes",
         {
-          event: "*",
-          schema: "public",
-          table: "tasks"
+          event:
+            "*",
+
+          schema:
+            "public",
+
+          table:
+            "tasks"
         },
         async () => {
           await loadTasks();
@@ -1984,16 +2151,24 @@ function subscribeToTaskChanges() {
       .subscribe();
 }
 
+/* =========================================
+   SHOW APPLICATION
+========================================= */
+
 async function showStoreflowApp(user) {
   if (
     isInitialising &&
-    currentUser?.id === user.id
+    currentUser?.id ===
+      user.id
   ) {
     return;
   }
 
-  isInitialising = true;
-  currentUser = user;
+  isInitialising =
+    true;
+
+  currentUser =
+    user;
 
   try {
     const profileLoaded =
@@ -2013,19 +2188,31 @@ async function showStoreflowApp(user) {
     updateUserDisplay();
     subscribeToTaskChanges();
 
-    hideElement("loginScreen");
-    showElement("storeflowApp");
+    hideElement(
+      "loginScreen"
+    );
+
+    showElement(
+      "storeflowApp"
+    );
   } finally {
-    isInitialising = false;
+    isInitialising =
+      false;
   }
 }
 
 function showLoginScreen() {
-  currentUser = null;
-  currentProfile = null;
+  currentUser =
+    null;
 
-  tasks = [];
-  profiles = [];
+  currentProfile =
+    null;
+
+  tasks =
+    [];
+
+  profiles =
+    [];
 
   currentView =
     "dashboard";
@@ -2036,11 +2223,17 @@ function showLoginScreen() {
         realtimeChannel
       );
 
-    realtimeChannel = null;
+    realtimeChannel =
+      null;
   }
 
-  hideElement("storeflowApp");
-  showElement("loginScreen");
+  hideElement(
+    "storeflowApp"
+  );
+
+  showElement(
+    "loginScreen"
+  );
 
   getElement("loginForm")
     ?.reset();
@@ -2049,13 +2242,18 @@ function showLoginScreen() {
     getElement("loginError");
 
   if (loginError) {
-    loginError.textContent = "";
+    loginError.textContent =
+      "";
 
     loginError.classList.add(
       "hidden"
     );
   }
 }
+
+/* =========================================
+   TOAST
+========================================= */
 
 function showToast(message) {
   const toast =
@@ -2072,7 +2270,9 @@ function showToast(message) {
     "hidden"
   );
 
-  clearTimeout(toastTimer);
+  clearTimeout(
+    toastTimer
+  );
 
   toastTimer =
     setTimeout(() => {
@@ -2081,6 +2281,10 @@ function showToast(message) {
       );
     }, 3000);
 }
+
+/* =========================================
+   EVENT LISTENERS
+========================================= */
 
 getElement("loginForm")
   ?.addEventListener(
@@ -2095,7 +2299,9 @@ getElement("logoutButton")
   );
 
 document
-  .querySelectorAll(".nav-link")
+  .querySelectorAll(
+    ".nav-link"
+  )
   .forEach(button => {
     button.addEventListener(
       "click",
@@ -2230,6 +2436,10 @@ document.addEventListener(
   }
 );
 
+/* =========================================
+   AUTH STATE
+========================================= */
+
 supabaseClient.auth
   .onAuthStateChange(
     async (
@@ -2245,6 +2455,10 @@ supabaseClient.auth
       }
     }
   );
+
+/* =========================================
+   INITIALISE
+========================================= */
 
 async function initialiseStoreflow() {
   const {
