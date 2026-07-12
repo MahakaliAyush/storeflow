@@ -1,5 +1,5 @@
 /* =========================================
-   STOREFLOW — SUPABASE V4.1
+   STOREFLOW — SUPABASE V5
 ========================================= */
 
 const supabaseClient =
@@ -21,6 +21,7 @@ const supabaseClient =
 
 let tasks = [];
 let profiles = [];
+let activityLogs = [];
 
 let currentUser = null;
 let currentProfile = null;
@@ -31,7 +32,7 @@ let toastTimer = null;
 let isInitialising = false;
 
 /* =========================================
-   ELEMENT HELPERS
+   BASIC HELPERS
 ========================================= */
 
 function getElement(id) {
@@ -45,10 +46,6 @@ function showElement(id) {
 function hideElement(id) {
   getElement(id)?.classList.add("hidden");
 }
-
-/* =========================================
-   TEXT AND PERMISSION HELPERS
-========================================= */
 
 function escapeHtml(value = "") {
   return String(value).replace(
@@ -74,9 +71,21 @@ function canManageTasks() {
   );
 }
 
+function formatRole(role) {
+  if (role === "owner") {
+    return "Store Owner";
+  }
+
+  if (role === "manager") {
+    return "Manager";
+  }
+
+  return "Staff";
+}
+
 function getProfileName(userId) {
   if (!userId) {
-    return "";
+    return "System";
   }
 
   const profile =
@@ -84,10 +93,7 @@ function getProfileName(userId) {
       item => item.id === userId
     );
 
-  return (
-    profile?.full_name ||
-    "Staff member"
-  );
+  return profile?.full_name || "Former staff member";
 }
 
 function getAssignedProfileName(task) {
@@ -121,22 +127,8 @@ function getInitials(name = "") {
 
   return words
     .slice(0, 2)
-    .map(word =>
-      word[0].toUpperCase()
-    )
+    .map(word => word[0].toUpperCase())
     .join("");
-}
-
-function formatRole(role) {
-  if (role === "owner") {
-    return "Store Owner";
-  }
-
-  if (role === "manager") {
-    return "Manager";
-  }
-
-  return "Staff";
 }
 
 /* =========================================
@@ -170,12 +162,11 @@ function formatDateTime(value) {
     {
       day: "numeric",
       month: "short",
+      year: "numeric",
       hour: "numeric",
       minute: "2-digit"
     }
-  ).format(
-    new Date(value)
-  );
+  ).format(new Date(value));
 }
 
 function getLocalDateKey(date) {
@@ -195,6 +186,17 @@ function getLocalDateKey(date) {
   return `${year}-${month}-${day}`;
 }
 
+function isToday(value) {
+  if (!value) {
+    return false;
+  }
+
+  return (
+    getLocalDateKey(new Date(value)) ===
+    getLocalDateKey(new Date())
+  );
+}
+
 function setGreeting() {
   const hour =
     new Date().getHours();
@@ -203,11 +205,9 @@ function setGreeting() {
     "Good evening";
 
   if (hour < 12) {
-    greeting =
-      "Good morning";
+    greeting = "Good morning";
   } else if (hour < 17) {
-    greeting =
-      "Good afternoon";
+    greeting = "Good afternoon";
   }
 
   const firstName =
@@ -234,7 +234,7 @@ function setGreeting() {
 }
 
 /* =========================================
-   USERNAME LOGIN
+   LOGIN
 ========================================= */
 
 async function signIn(event) {
@@ -259,18 +259,11 @@ async function signIn(event) {
   loginError.textContent = "";
   loginError.classList.add("hidden");
 
-  const usernamePattern =
-    /^[a-z0-9._-]+$/;
-
-  if (
-    !usernamePattern.test(username)
-  ) {
+  if (!/^[a-z0-9._-]+$/.test(username)) {
     loginError.textContent =
       "Username can only contain letters, numbers, dots, dashes and underscores.";
 
-    loginError.classList.remove(
-      "hidden"
-    );
+    loginError.classList.remove("hidden");
 
     return;
   }
@@ -307,9 +300,7 @@ async function signIn(event) {
     loginError.textContent =
       "Incorrect username or password.";
 
-    loginError.classList.remove(
-      "hidden"
-    );
+    loginError.classList.remove("hidden");
   } finally {
     loginButton.textContent =
       "Sign In";
@@ -341,11 +332,6 @@ async function signOut() {
     "Log Out";
 
   if (error) {
-    console.error(
-      "Logout error:",
-      error
-    );
-
     showToast(
       `Could not log out: ${error.message}`
     );
@@ -353,7 +339,7 @@ async function signOut() {
 }
 
 /* =========================================
-   CURRENT PROFILE
+   PROFILE DATA
 ========================================= */
 
 async function loadCurrentProfile() {
@@ -368,10 +354,7 @@ async function loadCurrentProfile() {
       .select(
         "id, full_name, role, active"
       )
-      .eq(
-        "id",
-        currentUser.id
-      )
+      .eq("id", currentUser.id)
       .single();
 
   if (error) {
@@ -392,8 +375,7 @@ async function loadCurrentProfile() {
       "Your StoreFlow account is inactive."
     );
 
-    await supabaseClient.auth
-      .signOut();
+    await supabaseClient.auth.signOut();
 
     return false;
   }
@@ -405,51 +387,6 @@ async function loadCurrentProfile() {
   return true;
 }
 
-function updateUserDisplay() {
-  const fullName =
-    currentProfile?.full_name ||
-    "Staff Member";
-
-  getElement("signedInName")
-    .textContent =
-    fullName;
-
-  getElement("signedInRole")
-    .textContent =
-    formatRole(
-      currentProfile?.role
-    );
-
-  getElement("userAvatar")
-    .textContent =
-    getInitials(fullName);
-
-  document
-    .querySelectorAll(
-      '[data-view="archive"], [data-view="staffOverview"]'
-    )
-    .forEach(button => {
-      button.style.display =
-        canManageTasks()
-          ? ""
-          : "none";
-    });
-
-  if (
-    (
-      currentView === "archive" ||
-      currentView === "staffOverview"
-    ) &&
-    !canManageTasks()
-  ) {
-    switchView("dashboard");
-  }
-}
-
-/* =========================================
-   PROFILES
-========================================= */
-
 async function loadProfiles() {
   const { data, error } =
     await supabaseClient
@@ -457,10 +394,7 @@ async function loadProfiles() {
       .select(
         "id, full_name, role, active"
       )
-      .eq(
-        "active",
-        true
-      )
+      .eq("active", true)
       .order(
         "full_name",
         {
@@ -482,6 +416,49 @@ async function loadProfiles() {
   profiles = data || [];
 }
 
+function updateUserDisplay() {
+  const fullName =
+    currentProfile?.full_name ||
+    "Staff Member";
+
+  getElement("signedInName").textContent =
+    fullName;
+
+  getElement("signedInRole").textContent =
+    formatRole(currentProfile?.role);
+
+  getElement("userAvatar").textContent =
+    getInitials(fullName);
+
+  document
+    .querySelectorAll(
+      [
+        '[data-view="archive"]',
+        '[data-view="staffOverview"]',
+        '[data-view="activityLog"]'
+      ].join(",")
+    )
+    .forEach(button => {
+      button.style.display =
+        canManageTasks()
+          ? ""
+          : "none";
+    });
+
+  const protectedViews = [
+    "archive",
+    "staffOverview",
+    "activityLog"
+  ];
+
+  if (
+    protectedViews.includes(currentView) &&
+    !canManageTasks()
+  ) {
+    switchView("dashboard");
+  }
+}
+
 function populateAssigneeDropdown() {
   const select =
     getElement("taskAssignedTo");
@@ -498,7 +475,8 @@ function populateAssigneeDropdown() {
       .map(profile => {
         return `
           <option value="${escapeHtml(profile.id)}">
-            ${escapeHtml(profile.full_name)} — ${escapeHtml(formatRole(profile.role))}
+            ${escapeHtml(profile.full_name)}
+            — ${escapeHtml(formatRole(profile.role))}
           </option>
         `;
       })
@@ -512,20 +490,17 @@ function populateAssigneeDropdown() {
     ${options}
   `;
 
-  const stillExists =
+  select.value =
     profiles.some(
       profile =>
         profile.id === oldValue
-    );
-
-  select.value =
-    stillExists
+    )
       ? oldValue
       : "";
 }
 
 /* =========================================
-   TASKS
+   TASK DATA
 ========================================= */
 
 async function loadTasks() {
@@ -601,6 +576,74 @@ async function loadTasks() {
   renderWebsite();
 }
 
+/* =========================================
+   ACTIVITY LOG DATA
+========================================= */
+
+async function loadActivityLogs() {
+  if (!canManageTasks()) {
+    activityLogs = [];
+    renderActivityLog();
+    return;
+  }
+
+  const { data, error } =
+    await supabaseClient
+      .from("activity_logs")
+      .select(
+        "id, user_id, task_id, action, details, created_at"
+      )
+      .order(
+        "created_at",
+        {
+          ascending: false
+        }
+      )
+      .limit(300);
+
+  if (error) {
+    console.error(
+      "Activity log loading error:",
+      error
+    );
+
+    activityLogs = [];
+
+    showToast(
+      `Could not load activity log: ${error.message}`
+    );
+
+    return;
+  }
+
+  activityLogs =
+    (data || []).map(log => ({
+      id:
+        log.id,
+
+      userId:
+        log.user_id,
+
+      taskId:
+        log.task_id,
+
+      action:
+        log.action,
+
+      details:
+        log.details || "Untitled task",
+
+      createdAt:
+        log.created_at
+    }));
+
+  renderActivityLog();
+}
+
+/* =========================================
+   TASK SORTING
+========================================= */
+
 function sortTasks(taskList) {
   const priorityOrder = {
     high: 0,
@@ -671,19 +714,15 @@ function sortTasks(taskList) {
 
 function createTaskCard(task) {
   const createdByName =
-    getProfileName(
-      task.createdBy
-    );
+    getProfileName(task.createdBy);
 
   const completedByName =
-    getProfileName(
-      task.completedBy
-    );
+    getProfileName(task.completedBy);
 
   const assignedToName =
     getAssignedProfileName(task);
 
-  const assignedToSomeoneElse =
+  const assignedElsewhere =
     task.assignedToUserId &&
     task.assignedToUserId !==
       currentUser?.id;
@@ -693,7 +732,7 @@ function createTaskCard(task) {
     !task.archived &&
     (
       canManageTasks() ||
-      !assignedToSomeoneElse
+      !assignedElsewhere
     );
 
   const completeButton =
@@ -846,12 +885,10 @@ function createTaskCard(task) {
       </div>
 
       <div class="task-actions">
-
         ${completeButton}
         ${reopenButton}
         ${archiveButton}
         ${archiveControls}
-
       </div>
 
     </article>
@@ -972,9 +1009,7 @@ function renderWeeklyPlanner() {
           index
         ) => {
           const date =
-            new Date(
-              startOfWeek
-            );
+            new Date(startOfWeek);
 
           date.setDate(
             startOfWeek.getDate() +
@@ -988,8 +1023,7 @@ function renderWeeklyPlanner() {
             tasks.filter(task => {
               return (
                 !task.archived &&
-                task.dueDate ===
-                  dateKey
+                task.dueDate === dateKey
               );
             });
 
@@ -1064,7 +1098,7 @@ function renderWeeklyPlanner() {
 }
 
 /* =========================================
-   FILTERED TASKS
+   TASK FILTERS
 ========================================= */
 
 function renderFilteredTasks() {
@@ -1072,17 +1106,13 @@ function renderFilteredTasks() {
     getElement("searchInput");
 
   const departmentFilter =
-    getElement(
-      "departmentFilter"
-    );
+    getElement("departmentFilter");
 
   const statusFilter =
     getElement("statusFilter");
 
   const priorityFilter =
-    getElement(
-      "priorityFilter"
-    );
+    getElement("priorityFilter");
 
   if (
     !searchInput ||
@@ -1173,8 +1203,7 @@ function calculateStaffMetrics(profile) {
   const completedTasks =
     assignedTasks.filter(
       task =>
-        task.status ===
-        "completed"
+        task.status === "completed"
     );
 
   const highPriorityTasks =
@@ -1212,14 +1241,10 @@ function calculateStaffMetrics(profile) {
 
 function renderStaffOverview() {
   const summary =
-    getElement(
-      "staffOverviewSummary"
-    );
+    getElement("staffOverviewSummary");
 
   const grid =
-    getElement(
-      "staffOverviewGrid"
-    );
+    getElement("staffOverviewGrid");
 
   if (!summary || !grid) {
     return;
@@ -1272,10 +1297,7 @@ function renderStaffOverview() {
       </div>
 
       <div>
-
-        <p>
-          Open assigned
-        </p>
+        <p>Open assigned</p>
 
         <strong>
           ${openAssignedTasks.length}
@@ -1284,7 +1306,6 @@ function renderStaffOverview() {
         <small>
           Assigned tasks still pending
         </small>
-
       </div>
 
     </article>
@@ -1296,10 +1317,7 @@ function renderStaffOverview() {
       </div>
 
       <div>
-
-        <p>
-          Completed assigned
-        </p>
+        <p>Completed assigned</p>
 
         <strong>
           ${completedAssignedTasks.length}
@@ -1308,7 +1326,6 @@ function renderStaffOverview() {
         <small>
           Finished assigned tasks
         </small>
-
       </div>
 
     </article>
@@ -1320,10 +1337,7 @@ function renderStaffOverview() {
       </div>
 
       <div>
-
-        <p>
-          Unassigned tasks
-        </p>
+        <p>Unassigned tasks</p>
 
         <strong>
           ${unassignedTasks.length}
@@ -1332,7 +1346,6 @@ function renderStaffOverview() {
         <small>
           Available to everyone
         </small>
-
       </div>
 
     </article>
@@ -1344,10 +1357,7 @@ function renderStaffOverview() {
       </div>
 
       <div>
-
-        <p>
-          High priority
-        </p>
+        <p>High priority</p>
 
         <strong>
           ${highPriorityAssignedTasks.length}
@@ -1356,16 +1366,10 @@ function renderStaffOverview() {
         <small>
           Assigned and still open
         </small>
-
       </div>
 
     </article>
   `;
-
-  /*
-    The store owner can access this page,
-    but is excluded from the performance list.
-  */
 
   const overviewProfiles =
     profiles.filter(
@@ -1393,9 +1397,7 @@ function renderStaffOverview() {
     overviewProfiles
       .map(profile => {
         const metrics =
-          calculateStaffMetrics(
-            profile
-          );
+          calculateStaffMetrics(profile);
 
         return `
           <article class="task-card">
@@ -1403,7 +1405,6 @@ function renderStaffOverview() {
             <div class="task-top">
 
               <div>
-
                 <h4>
                   ${escapeHtml(profile.full_name)}
                 </h4>
@@ -1411,7 +1412,6 @@ function renderStaffOverview() {
                 <p class="task-description">
                   ${escapeHtml(formatRole(profile.role))}
                 </p>
-
               </div>
 
               <div class="badges">
@@ -1455,7 +1455,332 @@ function renderStaffOverview() {
 }
 
 /* =========================================
-   MAIN RENDER
+   ACTIVITY LOG
+========================================= */
+
+function getActivityLabel(action) {
+  const labels = {
+    created:
+      "created",
+
+    completed:
+      "completed",
+
+    reopened:
+      "reopened",
+
+    archived:
+      "archived",
+
+    restored:
+      "restored",
+
+    deleted:
+      "deleted"
+  };
+
+  return labels[action] || action;
+}
+
+function getActivityIcon(action) {
+  const icons = {
+    created:
+      "＋",
+
+    completed:
+      "✓",
+
+    reopened:
+      "↻",
+
+    archived:
+      "□",
+
+    restored:
+      "↑",
+
+    deleted:
+      "✕"
+  };
+
+  return icons[action] || "•";
+}
+
+function getActivityBadgeClass(action) {
+  if (action === "completed") {
+    return "priority-low";
+  }
+
+  if (
+    action === "deleted" ||
+    action === "archived"
+  ) {
+    return "priority-high";
+  }
+
+  return "priority-medium";
+}
+
+function renderActivityLog() {
+  const summary =
+    getElement("activityLogSummary");
+
+  const list =
+    getElement("activityLogList");
+
+  const searchInput =
+    getElement("activitySearchInput");
+
+  const actionFilter =
+    getElement("activityActionFilter");
+
+  if (
+    !summary ||
+    !list ||
+    !searchInput ||
+    !actionFilter
+  ) {
+    return;
+  }
+
+  if (!canManageTasks()) {
+    summary.innerHTML = "";
+    list.innerHTML = "";
+    return;
+  }
+
+  const todayLogs =
+    activityLogs.filter(log =>
+      isToday(log.createdAt)
+    );
+
+  const createdCount =
+    activityLogs.filter(
+      log =>
+        log.action === "created"
+    ).length;
+
+  const completedCount =
+    activityLogs.filter(
+      log =>
+        log.action === "completed"
+    ).length;
+
+  const uniqueUsers =
+    new Set(
+      activityLogs
+        .map(log => log.userId)
+        .filter(Boolean)
+    ).size;
+
+  summary.innerHTML = `
+    <article class="stat-card">
+
+      <div class="stat-icon red">
+        01
+      </div>
+
+      <div>
+        <p>Activity today</p>
+
+        <strong>
+          ${todayLogs.length}
+        </strong>
+
+        <small>
+          Actions recorded today
+        </small>
+      </div>
+
+    </article>
+
+    <article class="stat-card">
+
+      <div class="stat-icon amber">
+        02
+      </div>
+
+      <div>
+        <p>Tasks created</p>
+
+        <strong>
+          ${createdCount}
+        </strong>
+
+        <small>
+          Recorded task creations
+        </small>
+      </div>
+
+    </article>
+
+    <article class="stat-card">
+
+      <div class="stat-icon green">
+        03
+      </div>
+
+      <div>
+        <p>Tasks completed</p>
+
+        <strong>
+          ${completedCount}
+        </strong>
+
+        <small>
+          Recorded completions
+        </small>
+      </div>
+
+    </article>
+
+    <article class="stat-card">
+
+      <div class="stat-icon dark">
+        04
+      </div>
+
+      <div>
+        <p>Active users</p>
+
+        <strong>
+          ${uniqueUsers}
+        </strong>
+
+        <small>
+          People with recorded activity
+        </small>
+      </div>
+
+    </article>
+  `;
+
+  const search =
+    searchInput
+      .value
+      .trim()
+      .toLowerCase();
+
+  const selectedAction =
+    actionFilter.value;
+
+  const filteredLogs =
+    activityLogs.filter(log => {
+      const userName =
+        getProfileName(log.userId);
+
+      const searchableText = `
+        ${userName}
+        ${log.action}
+        ${log.details}
+      `.toLowerCase();
+
+      const matchesSearch =
+        !search ||
+        searchableText.includes(search);
+
+      const matchesAction =
+        selectedAction === "all" ||
+        log.action === selectedAction;
+
+      return (
+        matchesSearch &&
+        matchesAction
+      );
+    });
+
+  if (!filteredLogs.length) {
+    list.innerHTML = `
+      <div class="empty-state">
+
+        <strong>
+          No activity found
+        </strong>
+
+        New task actions will appear here automatically.
+
+      </div>
+    `;
+
+    return;
+  }
+
+  list.innerHTML =
+    filteredLogs
+      .map(log => {
+        const userName =
+          getProfileName(log.userId);
+
+        const label =
+          getActivityLabel(log.action);
+
+        const icon =
+          getActivityIcon(log.action);
+
+        return `
+          <article class="task-card">
+
+            <div class="task-top">
+
+              <div>
+                <h4>
+                  ${escapeHtml(userName)}
+                  ${escapeHtml(label)}
+                  “${escapeHtml(log.details)}”
+                </h4>
+
+                <p class="task-description">
+                  ${formatDateTime(log.createdAt)}
+                </p>
+              </div>
+
+              <div class="badges">
+
+                <span
+                  class="badge ${getActivityBadgeClass(log.action)}"
+                >
+                  ${escapeHtml(icon)}
+                  ${escapeHtml(log.action.toUpperCase())}
+                </span>
+
+              </div>
+
+            </div>
+
+            <div class="task-meta">
+
+              <span>
+                👤 ${escapeHtml(userName)}
+              </span>
+
+              <span>
+                🕒 ${formatDateTime(log.createdAt)}
+              </span>
+
+              ${
+                log.taskId
+                  ? `
+                    <span>
+                      Task record available
+                    </span>
+                  `
+                  : `
+                    <span>
+                      Task was deleted
+                    </span>
+                  `
+              }
+
+            </div>
+
+          </article>
+        `;
+      })
+      .join("");
+}
+
+/* =========================================
+   MAIN WEBSITE RENDER
 ========================================= */
 
 function renderWebsite() {
@@ -1473,8 +1798,7 @@ function renderWebsite() {
   const completedTasks =
     activeTasks.filter(
       task =>
-        task.status ===
-        "completed"
+        task.status === "completed"
     );
 
   const archivedTasks =
@@ -1482,20 +1806,16 @@ function renderWebsite() {
       task => task.archived
     );
 
-  getElement("totalCount")
-    .textContent =
+  getElement("totalCount").textContent =
     activeTasks.length;
 
-  getElement("todoCount")
-    .textContent =
+  getElement("todoCount").textContent =
     todoTasks.length;
 
-  getElement("completedCount")
-    .textContent =
+  getElement("completedCount").textContent =
     completedTasks.length;
 
-  getElement("highCount")
-    .textContent =
+  getElement("highCount").textContent =
     todoTasks.filter(
       task =>
         task.priority === "high"
@@ -1511,8 +1831,7 @@ function renderWebsite() {
         )
       : 0;
 
-  getElement("progressPercent")
-    .textContent =
+  getElement("progressPercent").textContent =
     `${percentage}%`;
 
   getElement("progressRing")
@@ -1523,27 +1842,20 @@ function renderWebsite() {
     );
 
   if (!activeTasks.length) {
-    getElement("progressText")
-      .textContent =
+    getElement("progressText").textContent =
       "No active tasks yet.";
-  } else if (
-    percentage === 100
-  ) {
-    getElement("progressText")
-      .textContent =
+  } else if (percentage === 100) {
+    getElement("progressText").textContent =
       "Excellent — every active task is complete.";
   } else {
-    getElement("progressText")
-      .textContent =
+    getElement("progressText").textContent =
       `${completedTasks.length} of ${activeTasks.length} active tasks completed.`;
   }
 
-  getElement("summaryTodo")
-    .textContent =
+  getElement("summaryTodo").textContent =
     todoTasks.length;
 
-  getElement("summaryDone")
-    .textContent =
+  getElement("summaryDone").textContent =
     completedTasks.length;
 
   renderTaskList(
@@ -1566,6 +1878,7 @@ function renderWebsite() {
   renderWeeklyPlanner();
   renderMyTasks();
   renderStaffOverview();
+  renderActivityLog();
   updateUserDisplay();
 }
 
@@ -1708,6 +2021,10 @@ async function addTask(event) {
   );
 
   await loadTasks();
+
+  if (canManageTasks()) {
+    await loadActivityLogs();
+  }
 }
 
 /* =========================================
@@ -1750,12 +2067,11 @@ window.completeTask =
       return;
     }
 
-    const confirmed =
-      confirm(
+    if (
+      !confirm(
         "Mark this task as completed?"
-      );
-
-    if (!confirmed) {
+      )
+    ) {
       return;
     }
 
@@ -1773,17 +2089,9 @@ window.completeTask =
             new Date()
               .toISOString()
         })
-        .eq(
-          "id",
-          taskId
-        );
+        .eq("id", taskId);
 
     if (error) {
-      console.error(
-        "Complete task error:",
-        error
-      );
-
       showToast(
         `Could not complete task: ${error.message}`
       );
@@ -1796,6 +2104,10 @@ window.completeTask =
     );
 
     await loadTasks();
+
+    if (canManageTasks()) {
+      await loadActivityLogs();
+    }
   };
 
 /* =========================================
@@ -1825,17 +2137,9 @@ window.reopenTask =
           completed_at:
             null
         })
-        .eq(
-          "id",
-          taskId
-        );
+        .eq("id", taskId);
 
     if (error) {
-      console.error(
-        "Reopen task error:",
-        error
-      );
-
       showToast(
         `Could not reopen task: ${error.message}`
       );
@@ -1847,7 +2151,10 @@ window.reopenTask =
       "Task reopened."
     );
 
-    await loadTasks();
+    await Promise.all([
+      loadTasks(),
+      loadActivityLogs()
+    ]);
   };
 
 /* =========================================
@@ -1864,12 +2171,11 @@ window.archiveTask =
       return;
     }
 
-    const confirmed =
-      confirm(
+    if (
+      !confirm(
         "Archive this task?"
-      );
-
-    if (!confirmed) {
+      )
+    ) {
       return;
     }
 
@@ -1877,20 +2183,11 @@ window.archiveTask =
       await supabaseClient
         .from("tasks")
         .update({
-          archived:
-            true
+          archived: true
         })
-        .eq(
-          "id",
-          taskId
-        );
+        .eq("id", taskId);
 
     if (error) {
-      console.error(
-        "Archive task error:",
-        error
-      );
-
       showToast(
         `Could not archive task: ${error.message}`
       );
@@ -1902,7 +2199,10 @@ window.archiveTask =
       "Task moved to archive."
     );
 
-    await loadTasks();
+    await Promise.all([
+      loadTasks(),
+      loadActivityLogs()
+    ]);
   };
 
 /* =========================================
@@ -1919,20 +2219,11 @@ window.restoreTask =
       await supabaseClient
         .from("tasks")
         .update({
-          archived:
-            false
+          archived: false
         })
-        .eq(
-          "id",
-          taskId
-        );
+        .eq("id", taskId);
 
     if (error) {
-      console.error(
-        "Restore task error:",
-        error
-      );
-
       showToast(
         `Could not restore task: ${error.message}`
       );
@@ -1944,7 +2235,10 @@ window.restoreTask =
       "Task restored."
     );
 
-    await loadTasks();
+    await Promise.all([
+      loadTasks(),
+      loadActivityLogs()
+    ]);
   };
 
 /* =========================================
@@ -1961,12 +2255,11 @@ window.deleteTask =
       return;
     }
 
-    const confirmed =
-      confirm(
+    if (
+      !confirm(
         "Permanently delete this task? This cannot be undone."
-      );
-
-    if (!confirmed) {
+      )
+    ) {
       return;
     }
 
@@ -1974,17 +2267,9 @@ window.deleteTask =
       await supabaseClient
         .from("tasks")
         .delete()
-        .eq(
-          "id",
-          taskId
-        );
+        .eq("id", taskId);
 
     if (error) {
-      console.error(
-        "Delete task error:",
-        error
-      );
-
       showToast(
         `Could not delete task: ${error.message}`
       );
@@ -1996,7 +2281,10 @@ window.deleteTask =
       "Task permanently deleted."
     );
 
-    await loadTasks();
+    await Promise.all([
+      loadTasks(),
+      loadActivityLogs()
+    ]);
   };
 
 /* =========================================
@@ -2016,12 +2304,10 @@ function closeTaskModal() {
   getElement("taskForm")
     .reset();
 
-  getElement("taskPriority")
-    .value =
+  getElement("taskPriority").value =
     "medium";
 
-  getElement("taskAssignedTo")
-    .value =
+  getElement("taskAssignedTo").value =
     "";
 }
 
@@ -2032,7 +2318,8 @@ function closeTaskModal() {
 function switchView(viewName) {
   const protectedViews = [
     "archive",
-    "staffOverview"
+    "staffOverview",
+    "activityLog"
   ];
 
   if (
@@ -2068,6 +2355,9 @@ function switchView(viewName) {
     staffOverview:
       "Staff Overview",
 
+    activityLog:
+      "Activity Log",
+
     archive:
       "Archive"
   };
@@ -2101,8 +2391,7 @@ function switchView(viewName) {
     ?.classList
     .add("active");
 
-  getElement("pageTitle")
-    .textContent =
+  getElement("pageTitle").textContent =
     pageTitles[viewName] ||
     "StoreFlow";
 
@@ -2113,13 +2402,20 @@ function switchView(viewName) {
   getElement("mobileOverlay")
     .classList
     .remove("show");
+
+  if (
+    viewName === "activityLog" &&
+    canManageTasks()
+  ) {
+    loadActivityLogs();
+  }
 }
 
 /* =========================================
    REALTIME
 ========================================= */
 
-function subscribeToTaskChanges() {
+function subscribeToRealtimeChanges() {
   if (realtimeChannel) {
     supabaseClient
       .removeChannel(
@@ -2130,22 +2426,30 @@ function subscribeToTaskChanges() {
   realtimeChannel =
     supabaseClient
       .channel(
-        "storeflow-task-changes"
+        "storeflow-live-changes"
       )
       .on(
         "postgres_changes",
         {
-          event:
-            "*",
-
-          schema:
-            "public",
-
-          table:
-            "tasks"
+          event: "*",
+          schema: "public",
+          table: "tasks"
         },
         async () => {
           await loadTasks();
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "activity_logs"
+        },
+        async () => {
+          if (canManageTasks()) {
+            await loadActivityLogs();
+          }
         }
       )
       .subscribe();
@@ -2158,17 +2462,14 @@ function subscribeToTaskChanges() {
 async function showStoreflowApp(user) {
   if (
     isInitialising &&
-    currentUser?.id ===
-      user.id
+    currentUser?.id === user.id
   ) {
     return;
   }
 
-  isInitialising =
-    true;
+  isInitialising = true;
 
-  currentUser =
-    user;
+  currentUser = user;
 
   try {
     const profileLoaded =
@@ -2184,38 +2485,30 @@ async function showStoreflowApp(user) {
 
     await loadTasks();
 
+    if (canManageTasks()) {
+      await loadActivityLogs();
+    }
+
     setGreeting();
     updateUserDisplay();
-    subscribeToTaskChanges();
+    subscribeToRealtimeChanges();
 
-    hideElement(
-      "loginScreen"
-    );
-
-    showElement(
-      "storeflowApp"
-    );
+    hideElement("loginScreen");
+    showElement("storeflowApp");
   } finally {
-    isInitialising =
-      false;
+    isInitialising = false;
   }
 }
 
 function showLoginScreen() {
-  currentUser =
-    null;
+  currentUser = null;
+  currentProfile = null;
 
-  currentProfile =
-    null;
+  tasks = [];
+  profiles = [];
+  activityLogs = [];
 
-  tasks =
-    [];
-
-  profiles =
-    [];
-
-  currentView =
-    "dashboard";
+  currentView = "dashboard";
 
   if (realtimeChannel) {
     supabaseClient
@@ -2223,17 +2516,11 @@ function showLoginScreen() {
         realtimeChannel
       );
 
-    realtimeChannel =
-      null;
+    realtimeChannel = null;
   }
 
-  hideElement(
-    "storeflowApp"
-  );
-
-  showElement(
-    "loginScreen"
-  );
+  hideElement("storeflowApp");
+  showElement("loginScreen");
 
   getElement("loginForm")
     ?.reset();
@@ -2242,8 +2529,7 @@ function showLoginScreen() {
     getElement("loginError");
 
   if (loginError) {
-    loginError.textContent =
-      "";
+    loginError.textContent = "";
 
     loginError.classList.add(
       "hidden"
@@ -2270,9 +2556,7 @@ function showToast(message) {
     "hidden"
   );
 
-  clearTimeout(
-    toastTimer
-  );
+  clearTimeout(toastTimer);
 
   toastTimer =
     setTimeout(() => {
@@ -2299,9 +2583,7 @@ getElement("logoutButton")
   );
 
 document
-  .querySelectorAll(
-    ".nav-link"
-  )
+  .querySelectorAll(".nav-link")
   .forEach(button => {
     button.addEventListener(
       "click",
@@ -2314,9 +2596,7 @@ document
   });
 
 document
-  .querySelectorAll(
-    "[data-go-view]"
-  )
+  .querySelectorAll("[data-go-view]")
   .forEach(button => {
     button.addEventListener(
       "click",
@@ -2329,9 +2609,7 @@ document
   });
 
 document
-  .querySelectorAll(
-    ".open-task-modal"
-  )
+  .querySelectorAll(".open-task-modal")
   .forEach(button => {
     button.addEventListener(
       "click",
@@ -2392,6 +2670,18 @@ getElement("priorityFilter")
   ?.addEventListener(
     "change",
     renderFilteredTasks
+  );
+
+getElement("activitySearchInput")
+  ?.addEventListener(
+    "input",
+    renderActivityLog
+  );
+
+getElement("activityActionFilter")
+  ?.addEventListener(
+    "change",
+    renderActivityLog
   );
 
 getElement("menuButton")

@@ -75,7 +75,6 @@
       <form id="loginForm">
 
         <label>
-
           Username
 
           <input
@@ -88,11 +87,9 @@
             pattern="[A-Za-z0-9._-]+"
             placeholder="Enter your username"
           >
-
         </label>
 
         <label>
-
           Password
 
           <input
@@ -103,7 +100,6 @@
             minlength="6"
             placeholder="Enter your password"
           >
-
         </label>
 
         <button
@@ -156,15 +152,11 @@
         </div>
 
         <div>
-
-          <h1>
-            StoreFlow
-          </h1>
+          <h1>StoreFlow</h1>
 
           <p>
             Store Operations Hub
           </p>
-
         </div>
 
       </div>
@@ -174,7 +166,6 @@
         <span class="store-dot"></span>
 
         <div>
-
           <strong>
             IGA Express
           </strong>
@@ -182,7 +173,6 @@
           <small>
             Eight Mile Plains
           </small>
-
         </div>
 
       </div>
@@ -246,6 +236,15 @@
         <button
           type="button"
           class="nav-link"
+          data-view="activityLog"
+        >
+          <span>↻</span>
+          Activity Log
+        </button>
+
+        <button
+          type="button"
+          class="nav-link"
           data-view="archive"
         >
           <span>□</span>
@@ -257,11 +256,8 @@
       <div class="sidebar-footer">
 
         <span class="status-pill">
-
           <i></i>
-
           System online
-
         </span>
 
         <p>
@@ -269,7 +265,7 @@
         </p>
 
         <small>
-          StoreFlow v4.0
+          StoreFlow v5.0
         </small>
 
       </div>
@@ -277,6 +273,8 @@
     </aside>
 
     <main class="main">
+
+      <!-- TOP BAR -->
 
       <header class="topbar">
 
@@ -292,7 +290,6 @@
           </button>
 
           <div>
-
             <p class="eyebrow">
               IGA EXPRESS EIGHT MILE PLAINS
             </p>
@@ -300,7 +297,6 @@
             <h2 id="pageTitle">
               Dashboard
             </h2>
-
           </div>
 
         </div>
@@ -397,10 +393,7 @@
               </div>
 
               <div>
-
-                <p>
-                  Active tasks
-                </p>
+                <p>Active tasks</p>
 
                 <strong id="totalCount">
                   0
@@ -409,7 +402,6 @@
                 <small>
                   Across all departments
                 </small>
-
               </div>
 
             </article>
@@ -421,10 +413,7 @@
               </div>
 
               <div>
-
-                <p>
-                  Still to do
-                </p>
+                <p>Still to do</p>
 
                 <strong id="todoCount">
                   0
@@ -433,7 +422,6 @@
                 <small>
                   Awaiting completion
                 </small>
-
               </div>
 
             </article>
@@ -445,10 +433,7 @@
               </div>
 
               <div>
-
-                <p>
-                  Completed
-                </p>
+                <p>Completed</p>
 
                 <strong id="completedCount">
                   0
@@ -457,7 +442,6 @@
                 <small>
                   Recorded successfully
                 </small>
-
               </div>
 
             </article>
@@ -469,10 +453,7 @@
               </div>
 
               <div>
-
-                <p>
-                  High priority
-                </p>
+                <p>High priority</p>
 
                 <strong id="highCount">
                   0
@@ -481,7 +462,6 @@
                 <small>
                   Needs attention
                 </small>
-
               </div>
 
             </article>
@@ -495,7 +475,6 @@
               <div class="panel-header">
 
                 <div>
-
                   <p class="section-label">
                     WORK QUEUE
                   </p>
@@ -503,7 +482,6 @@
                   <h3>
                     Priority and upcoming tasks
                   </h3>
-
                 </div>
 
                 <button
@@ -528,7 +506,6 @@
               <div class="panel-header">
 
                 <div>
-
                   <p class="section-label">
                     TEAM PROGRESS
                   </p>
@@ -536,7 +513,6 @@
                   <h3>
                     Task completion
                   </h3>
-
                 </div>
 
               </div>
@@ -547,11 +523,9 @@
                   class="progress-ring"
                   id="progressRing"
                 >
-
                   <span id="progressPercent">
                     0%
                   </span>
-
                 </div>
 
                 <p id="progressText">
@@ -561,23 +535,13 @@
                 <div class="mini-summary">
 
                   <span>
-
-                    <b id="summaryTodo">
-                      0
-                    </b>
-
+                    <b id="summaryTodo">0</b>
                     Open
-
                   </span>
 
                   <span>
-
-                    <b id="summaryDone">
-                      0
-                    </b>
-
+                    <b id="summaryDone">0</b>
                     Done
-
                   </span>
 
                 </div>
@@ -600,7 +564,6 @@
           <div class="page-heading">
 
             <div>
-
               <p class="section-label">
                 PERSONAL WORK QUEUE
               </p>
@@ -612,7 +575,6 @@
               <p>
                 Tasks assigned directly to you and tasks available to everyone.
               </p>
-
             </div>
 
             <button
@@ -645,7 +607,6 @@
           <div class="page-heading">
 
             <div>
-
               <p class="section-label">
                 WEEKLY OPERATIONS
               </p>
@@ -657,7 +618,6 @@
               <p>
                 See tasks by due day and keep the whole week organised.
               </p>
-
             </div>
 
             <button
@@ -686,7 +646,6 @@
           <div class="page-heading">
 
             <div>
-
               <p class="section-label">
                 TASK CONTROL
               </p>
@@ -698,7 +657,6 @@
               <p>
                 Search, filter and manage store work.
               </p>
-
             </div>
 
             <button
@@ -723,7 +681,6 @@
               id="departmentFilter"
               aria-label="Filter by department"
             >
-
               <option value="all">
                 All departments
               </option>
@@ -759,14 +716,12 @@
               <option value="Other">
                 Other
               </option>
-
             </select>
 
             <select
               id="statusFilter"
               aria-label="Filter by task status"
             >
-
               <option value="all">
                 All statuses
               </option>
@@ -778,14 +733,12 @@
               <option value="completed">
                 Completed
               </option>
-
             </select>
 
             <select
               id="priorityFilter"
               aria-label="Filter by priority"
             >
-
               <option value="all">
                 All priorities
               </option>
@@ -801,7 +754,6 @@
               <option value="low">
                 Low
               </option>
-
             </select>
 
           </div>
@@ -823,7 +775,6 @@
           <div class="page-heading">
 
             <div>
-
               <p class="section-label">
                 COMPLETION RECORD
               </p>
@@ -835,7 +786,6 @@
               <p>
                 A clear history of finished store work.
               </p>
-
             </div>
 
           </div>
@@ -861,7 +811,6 @@
           <div class="page-heading">
 
             <div>
-
               <p class="section-label">
                 MANAGEMENT REPORT
               </p>
@@ -873,7 +822,6 @@
               <p>
                 Review assigned work, pending tasks and completion performance.
               </p>
-
             </div>
 
           </div>
@@ -888,7 +836,6 @@
             <div class="panel-header">
 
               <div>
-
                 <p class="section-label">
                   TEAM PERFORMANCE
                 </p>
@@ -896,7 +843,6 @@
                 <h3>
                   Individual staff results
                 </h3>
-
               </div>
 
             </div>
@@ -904,6 +850,105 @@
             <div
               class="task-list"
               id="staffOverviewGrid"
+            ></div>
+
+          </div>
+
+        </section>
+
+        <!-- ACTIVITY LOG -->
+
+        <section
+          id="activityLogView"
+          class="view"
+        >
+
+          <div class="page-heading">
+
+            <div>
+              <p class="section-label">
+                MANAGEMENT AUDIT
+              </p>
+
+              <h3>
+                Activity Log
+              </h3>
+
+              <p>
+                Review who created, completed, reopened, archived, restored or deleted tasks.
+              </p>
+            </div>
+
+          </div>
+
+          <div
+            class="stats-grid"
+            id="activityLogSummary"
+          ></div>
+
+          <div class="filter-bar">
+
+            <input
+              id="activitySearchInput"
+              type="search"
+              placeholder="Search staff member, task or action..."
+              aria-label="Search activity"
+            >
+
+            <select
+              id="activityActionFilter"
+              aria-label="Filter activity by action"
+            >
+              <option value="all">
+                All activity
+              </option>
+
+              <option value="created">
+                Created
+              </option>
+
+              <option value="completed">
+                Completed
+              </option>
+
+              <option value="reopened">
+                Reopened
+              </option>
+
+              <option value="archived">
+                Archived
+              </option>
+
+              <option value="restored">
+                Restored
+              </option>
+
+              <option value="deleted">
+                Deleted
+              </option>
+            </select>
+
+          </div>
+
+          <div class="panel">
+
+            <div class="panel-header">
+
+              <div>
+                <p class="section-label">
+                  RECENT ACTIONS
+                </p>
+
+                <h3>
+                  Store activity history
+                </h3>
+              </div>
+
+            </div>
+
+            <div
+              class="task-list"
+              id="activityLogList"
             ></div>
 
           </div>
@@ -920,7 +965,6 @@
           <div class="page-heading">
 
             <div>
-
               <p class="section-label">
                 MANAGEMENT CONTROL
               </p>
@@ -932,7 +976,6 @@
               <p>
                 Only managers and the store owner can restore or permanently delete tasks.
               </p>
-
             </div>
 
           </div>
@@ -983,7 +1026,6 @@
       <div class="modal-header">
 
         <div>
-
           <p class="section-label">
             CREATE WORK ITEM
           </p>
@@ -991,7 +1033,6 @@
           <h3 id="taskModalTitle">
             Add a new task
           </h3>
-
         </div>
 
         <button
@@ -1008,7 +1049,6 @@
       <form id="taskForm">
 
         <label>
-
           Task title *
 
           <input
@@ -1018,11 +1058,9 @@
             maxlength="100"
             placeholder="Example: Fill front drinks fridge"
           >
-
         </label>
 
         <label>
-
           Instructions
 
           <textarea
@@ -1031,20 +1069,17 @@
             maxlength="500"
             placeholder="Explain exactly what needs to be done"
           ></textarea>
-
         </label>
 
         <div class="form-grid">
 
           <label>
-
             Department *
 
             <select
               id="taskDepartment"
               required
             >
-
               <option value="">
                 Choose department
               </option>
@@ -1080,20 +1115,16 @@
               <option value="Other">
                 Other
               </option>
-
             </select>
-
           </label>
 
           <label>
-
             Priority *
 
             <select
               id="taskPriority"
               required
             >
-
               <option value="low">
                 Low
               </option>
@@ -1108,34 +1139,26 @@
               <option value="high">
                 High
               </option>
-
             </select>
-
           </label>
 
           <label>
-
             Due date
 
             <input
               id="taskDueDate"
               type="date"
             >
-
           </label>
 
           <label>
-
             Assigned to
 
             <select id="taskAssignedTo">
-
               <option value="">
                 Anyone
               </option>
-
             </select>
-
           </label>
 
         </div>
@@ -1173,9 +1196,7 @@
   ></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
   <script src="config.js"></script>
-
   <script src="app.js"></script>
 
 </body>
