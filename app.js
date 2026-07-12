@@ -1,5 +1,5 @@
 /* =========================================
-   STOREFLOW — SUPABASE USERNAME VERSION
+   STOREFLOW — SUPABASE V3
 ========================================= */
 
 const supabaseClient =
@@ -79,18 +79,42 @@ function getProfileName(userId) {
     return "";
   }
 
-  const profile = profiles.find(
-    item => item.id === userId
-  );
+  const profile =
+    profiles.find(
+      item => item.id === userId
+    );
 
-  return profile?.full_name || "Staff member";
+  return (
+    profile?.full_name ||
+    "Staff member"
+  );
+}
+
+function getAssignedProfileName(task) {
+  if (!task.assignedToUserId) {
+    return "Anyone";
+  }
+
+  const assignedProfile =
+    profiles.find(
+      profile =>
+        profile.id ===
+        task.assignedToUserId
+    );
+
+  return (
+    assignedProfile?.full_name ||
+    task.assignedTo ||
+    "Staff member"
+  );
 }
 
 function getInitials(name = "") {
-  const words = name
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean);
+  const words =
+    name
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean);
 
   if (!words.length) {
     return "SF";
@@ -98,7 +122,9 @@ function getInitials(name = "") {
 
   return words
     .slice(0, 2)
-    .map(word => word[0].toUpperCase())
+    .map(word =>
+      word[0].toUpperCase()
+    )
     .join("");
 }
 
@@ -136,19 +162,24 @@ function formatDateTime(value) {
       hour: "numeric",
       minute: "2-digit"
     }
-  ).format(new Date(value));
+  ).format(
+    new Date(value)
+  );
 }
 
 function getLocalDateKey(date) {
-  const year = date.getFullYear();
+  const year =
+    date.getFullYear();
 
-  const month = String(
-    date.getMonth() + 1
-  ).padStart(2, "0");
+  const month =
+    String(
+      date.getMonth() + 1
+    ).padStart(2, "0");
 
-  const day = String(
-    date.getDate()
-  ).padStart(2, "0");
+  const day =
+    String(
+      date.getDate()
+    ).padStart(2, "0");
 
   return `${year}-${month}-${day}`;
 }
@@ -157,12 +188,15 @@ function setGreeting() {
   const currentHour =
     new Date().getHours();
 
-  let greeting = "Good evening";
+  let greeting =
+    "Good evening";
 
   if (currentHour < 12) {
-    greeting = "Good morning";
+    greeting =
+      "Good morning";
   } else if (currentHour < 17) {
-    greeting = "Good afternoon";
+    greeting =
+      "Good afternoon";
   }
 
   const firstName =
@@ -217,11 +251,15 @@ async function signIn(event) {
   const usernamePattern =
     /^[a-z0-9._-]+$/;
 
-  if (!usernamePattern.test(username)) {
+  if (
+    !usernamePattern.test(username)
+  ) {
     loginError.textContent =
       "Username can only contain letters, numbers, dots, dashes and underscores.";
 
-    loginError.classList.remove("hidden");
+    loginError.classList.remove(
+      "hidden"
+    );
 
     return;
   }
@@ -231,6 +269,9 @@ async function signIn(event) {
 
   loginButton.textContent =
     "Signing In...";
+
+  loginButton.disabled =
+    true;
 
   loginButton.classList.add(
     "loading-button"
@@ -263,6 +304,9 @@ async function signIn(event) {
     loginButton.textContent =
       "Sign In";
 
+    loginButton.disabled =
+      false;
+
     loginButton.classList.remove(
       "loading-button"
     );
@@ -273,14 +317,21 @@ async function signOut() {
   const logoutButton =
     getElement("logoutButton");
 
-  logoutButton.disabled = true;
-  logoutButton.textContent = "Logging Out...";
+  logoutButton.disabled =
+    true;
+
+  logoutButton.textContent =
+    "Logging Out...";
 
   const { error } =
-    await supabaseClient.auth.signOut();
+    await supabaseClient.auth
+      .signOut();
 
-  logoutButton.disabled = false;
-  logoutButton.textContent = "Log Out";
+  logoutButton.disabled =
+    false;
+
+  logoutButton.textContent =
+    "Log Out";
 
   if (error) {
     console.error(
@@ -295,7 +346,7 @@ async function signOut() {
 }
 
 /* =========================================
-   CURRENT USER PROFILE
+   CURRENT PROFILE
 ========================================= */
 
 async function loadCurrentProfile() {
@@ -310,7 +361,10 @@ async function loadCurrentProfile() {
       .select(
         "id, full_name, role, active"
       )
-      .eq("id", currentUser.id)
+      .eq(
+        "id",
+        currentUser.id
+      )
       .single();
 
   if (error) {
@@ -331,7 +385,8 @@ async function loadCurrentProfile() {
       "Your StoreFlow account is inactive."
     );
 
-    await supabaseClient.auth.signOut();
+    await supabaseClient.auth
+      .signOut();
 
     return false;
   }
@@ -348,13 +403,17 @@ function updateUserDisplay() {
     currentProfile?.full_name ||
     "Staff Member";
 
-  getElement("signedInName").textContent =
+  getElement("signedInName")
+    .textContent =
     fullName;
 
-  getElement("signedInRole").textContent =
-    currentProfile?.role || "staff";
+  getElement("signedInRole")
+    .textContent =
+    currentProfile?.role ||
+    "staff";
 
-  getElement("userAvatar").textContent =
+  getElement("userAvatar")
+    .textContent =
     getInitials(fullName);
 
   document
@@ -377,7 +436,7 @@ function updateUserDisplay() {
 }
 
 /* =========================================
-   LOAD ACTIVE STAFF PROFILES
+   LOAD PROFILES
 ========================================= */
 
 async function loadProfiles() {
@@ -387,7 +446,10 @@ async function loadProfiles() {
       .select(
         "id, full_name, role, active"
       )
-      .eq("active", true)
+      .eq(
+        "active",
+        true
+      )
       .order(
         "full_name",
         {
@@ -406,11 +468,72 @@ async function loadProfiles() {
     return;
   }
 
-  profiles = data || [];
+  profiles =
+    data || [];
+}
+
+function populateAssigneeDropdown() {
+  const assigneeSelect =
+    getElement("taskAssignedTo");
+
+  if (!assigneeSelect) {
+    return;
+  }
+
+  const existingValue =
+    assigneeSelect.value;
+
+  const profileOptions =
+    profiles
+      .map(profile => {
+        let roleLabel =
+          "Staff";
+
+        if (
+          profile.role === "owner"
+        ) {
+          roleLabel =
+            "Owner";
+        } else if (
+          profile.role === "manager"
+        ) {
+          roleLabel =
+            "Manager";
+        }
+
+        return `
+          <option value="${escapeHtml(profile.id)}">
+            ${escapeHtml(profile.full_name)} — ${roleLabel}
+          </option>
+        `;
+      })
+      .join("");
+
+  assigneeSelect.innerHTML = `
+    <option value="">
+      Anyone
+    </option>
+
+    ${profileOptions}
+  `;
+
+  if (
+    profiles.some(
+      profile =>
+        profile.id ===
+        existingValue
+    )
+  ) {
+    assigneeSelect.value =
+      existingValue;
+  } else {
+    assigneeSelect.value =
+      "";
+  }
 }
 
 /* =========================================
-   LOAD SHARED TASKS
+   LOAD TASKS
 ========================================= */
 
 async function loadTasks() {
@@ -438,32 +561,50 @@ async function loadTasks() {
     return;
   }
 
-  tasks = (data || []).map(task => ({
-    id: task.id,
-    title: task.title,
-    description:
-      task.description || "",
-    department:
-      task.department,
-    priority:
-      task.priority,
-    dueDate:
-      task.due_date || "",
-    assignedTo:
-      task.assigned_to || "",
-    createdBy:
-      task.created_by,
-    createdAt:
-      task.created_at,
-    status:
-      task.status,
-    completedBy:
-      task.completed_by,
-    completedAt:
-      task.completed_at,
-    archived:
-      task.archived
-  }));
+  tasks =
+    (data || []).map(task => ({
+      id:
+        task.id,
+
+      title:
+        task.title,
+
+      description:
+        task.description || "",
+
+      department:
+        task.department,
+
+      priority:
+        task.priority,
+
+      dueDate:
+        task.due_date || "",
+
+      assignedTo:
+        task.assigned_to || "",
+
+      assignedToUserId:
+        task.assigned_to_user_id || "",
+
+      createdBy:
+        task.created_by,
+
+      createdAt:
+        task.created_at,
+
+      status:
+        task.status,
+
+      completedBy:
+        task.completed_by,
+
+      completedAt:
+        task.completed_at,
+
+      archived:
+        task.archived
+    }));
 
   renderWebsite();
 }
@@ -474,10 +615,17 @@ async function loadTasks() {
 
 function createTaskCard(task) {
   const createdByName =
-    getProfileName(task.createdBy);
+    getProfileName(
+      task.createdBy
+    );
 
   const completedByName =
-    getProfileName(task.completedBy);
+    getProfileName(
+      task.completedBy
+    );
+
+  const assignedToName =
+    getAssignedProfileName(task);
 
   const completeButton =
     task.status === "todo" &&
@@ -608,7 +756,7 @@ function createTaskCard(task) {
         </span>
 
         <span>
-          👤 ${escapeHtml(task.assignedTo || "Anyone")}
+          👤 ${escapeHtml(assignedToName)}
         </span>
 
         <span>
@@ -676,6 +824,115 @@ function renderTaskList(
 }
 
 /* =========================================
+   TASK SORTING
+========================================= */
+
+function sortTasks(taskList) {
+  const priorityOrder = {
+    high: 0,
+    medium: 1,
+    low: 2
+  };
+
+  return [...taskList].sort(
+    (
+      firstTask,
+      secondTask
+    ) => {
+      if (
+        firstTask.status !==
+        secondTask.status
+      ) {
+        return (
+          firstTask.status === "todo"
+            ? -1
+            : 1
+        );
+      }
+
+      const firstPriority =
+        priorityOrder[
+          firstTask.priority
+        ] ?? 3;
+
+      const secondPriority =
+        priorityOrder[
+          secondTask.priority
+        ] ?? 3;
+
+      if (
+        firstPriority !==
+        secondPriority
+      ) {
+        return (
+          firstPriority -
+          secondPriority
+        );
+      }
+
+      if (
+        firstTask.dueDate &&
+        secondTask.dueDate
+      ) {
+        return firstTask.dueDate
+          .localeCompare(
+            secondTask.dueDate
+          );
+      }
+
+      if (firstTask.dueDate) {
+        return -1;
+      }
+
+      if (secondTask.dueDate) {
+        return 1;
+      }
+
+      return 0;
+    }
+  );
+}
+
+/* =========================================
+   MY TASKS
+========================================= */
+
+function renderMyTasks() {
+  if (!currentUser) {
+    renderTaskList(
+      "myTaskList",
+      []
+    );
+
+    return;
+  }
+
+  const myTasks =
+    tasks.filter(task => {
+      if (task.archived) {
+        return false;
+      }
+
+      const assignedToEveryone =
+        !task.assignedToUserId;
+
+      const assignedToCurrentUser =
+        task.assignedToUserId ===
+        currentUser.id;
+
+      return (
+        assignedToEveryone ||
+        assignedToCurrentUser
+      );
+    });
+
+  renderTaskList(
+    "myTaskList",
+    sortTasks(myTasks)
+  );
+}
+
+/* =========================================
    WEEKLY PLANNER
 ========================================= */
 
@@ -697,7 +954,8 @@ function renderWeeklyPlanner() {
     "Saturday"
   ];
 
-  const today = new Date();
+  const today =
+    new Date();
 
   const startOfWeek =
     new Date(today);
@@ -715,96 +973,108 @@ function renderWeeklyPlanner() {
   );
 
   weekBoard.innerHTML =
-    days.map(
-      (dayName, index) => {
-        const date =
-          new Date(startOfWeek);
-
-        date.setDate(
-          startOfWeek.getDate() +
+    days
+      .map(
+        (
+          dayName,
           index
-        );
-
-        const dateKey =
-          getLocalDateKey(date);
-
-        const dayTasks =
-          tasks.filter(task => {
-            return (
-              !task.archived &&
-              task.dueDate === dateKey
+        ) => {
+          const date =
+            new Date(
+              startOfWeek
             );
-          });
 
-        const taskHtml =
-          dayTasks.length
-            ? dayTasks.map(task => {
-                return `
-                  <div
-                    class="
-                      planner-card
-                      ${
-                        task.status === "completed"
-                          ? "done"
-                          : ""
+          date.setDate(
+            startOfWeek.getDate() +
+            index
+          );
+
+          const dateKey =
+            getLocalDateKey(date);
+
+          const dayTasks =
+            tasks.filter(task => {
+              return (
+                !task.archived &&
+                task.dueDate ===
+                  dateKey
+              );
+            });
+
+          const taskHtml =
+            dayTasks.length
+              ? sortTasks(
+                  dayTasks
+                )
+                  .map(task => {
+                    return `
+                      <div
+                        class="
+                          planner-card
+                          ${
+                            task.status === "completed"
+                              ? "done"
+                              : ""
+                          }
+                        "
+                      >
+
+                        <h4>
+                          ${escapeHtml(task.title)}
+                        </h4>
+
+                        <p>
+                          ${escapeHtml(getAssignedProfileName(task))}
+                          ·
+                          ${escapeHtml(task.priority)}
+                        </p>
+
+                      </div>
+                    `;
+                  })
+                  .join("")
+              : `
+                <div class="empty-day">
+                  No scheduled tasks
+                </div>
+              `;
+
+          return `
+            <section class="day-column">
+
+              <div class="day-header">
+
+                <strong>
+                  ${dayName}
+                </strong>
+
+                <small>
+                  ${
+                    date.toLocaleDateString(
+                      "en-AU",
+                      {
+                        day: "numeric",
+                        month: "short"
                       }
-                    "
-                  >
+                    )
+                  }
+                </small>
 
-                    <h4>
-                      ${escapeHtml(task.title)}
-                    </h4>
-
-                    <p>
-                      ${escapeHtml(task.assignedTo || "Anyone")}
-                      ·
-                      ${escapeHtml(task.priority)}
-                    </p>
-
-                  </div>
-                `;
-              }).join("")
-            : `
-              <div class="empty-day">
-                No scheduled tasks
               </div>
-            `;
 
-        return `
-          <section class="day-column">
+              <div class="day-tasks">
+                ${taskHtml}
+              </div>
 
-            <div class="day-header">
-
-              <strong>
-                ${dayName}
-              </strong>
-
-              <small>
-                ${
-                  date.toLocaleDateString(
-                    "en-AU",
-                    {
-                      day: "numeric",
-                      month: "short"
-                    }
-                  )
-                }
-              </small>
-
-            </div>
-
-            <div class="day-tasks">
-              ${taskHtml}
-            </div>
-
-          </section>
-        `;
-      }
-    ).join("");
+            </section>
+          `;
+        }
+      )
+      .join("");
 }
 
 /* =========================================
-   TASK FILTERS
+   FILTERED TASKS
 ========================================= */
 
 function renderFilteredTasks() {
@@ -812,13 +1082,17 @@ function renderFilteredTasks() {
     getElement("searchInput");
 
   const departmentFilter =
-    getElement("departmentFilter");
+    getElement(
+      "departmentFilter"
+    );
 
   const statusFilter =
     getElement("statusFilter");
 
   const priorityFilter =
-    getElement("priorityFilter");
+    getElement(
+      "priorityFilter"
+    );
 
   if (
     !searchInput ||
@@ -855,17 +1129,21 @@ function renderFilteredTasks() {
         ${task.description}
         ${task.department}
         ${task.assignedTo}
+        ${getAssignedProfileName(task)}
         ${getProfileName(task.createdBy)}
         ${getProfileName(task.completedBy)}
       `.toLowerCase();
 
       const matchesSearch =
         !search ||
-        searchableText.includes(search);
+        searchableText.includes(
+          search
+        );
 
       const matchesDepartment =
         department === "all" ||
-        task.department === department;
+        task.department ===
+          department;
 
       const matchesStatus =
         status === "all" ||
@@ -873,7 +1151,8 @@ function renderFilteredTasks() {
 
       const matchesPriority =
         priority === "all" ||
-        task.priority === priority;
+        task.priority ===
+          priority;
 
       return (
         matchesSearch &&
@@ -885,7 +1164,7 @@ function renderFilteredTasks() {
 
   renderTaskList(
     "allTaskList",
-    filteredTasks
+    sortTasks(filteredTasks)
   );
 }
 
@@ -901,12 +1180,15 @@ function renderWebsite() {
 
   const todoTasks =
     activeTasks.filter(
-      task => task.status === "todo"
+      task =>
+        task.status === "todo"
     );
 
   const completedTasks =
     activeTasks.filter(
-      task => task.status === "completed"
+      task =>
+        task.status ===
+        "completed"
     );
 
   const archivedTasks =
@@ -914,18 +1196,23 @@ function renderWebsite() {
       task => task.archived
     );
 
-  getElement("totalCount").textContent =
+  getElement("totalCount")
+    .textContent =
     activeTasks.length;
 
-  getElement("todoCount").textContent =
+  getElement("todoCount")
+    .textContent =
     todoTasks.length;
 
-  getElement("completedCount").textContent =
+  getElement("completedCount")
+    .textContent =
     completedTasks.length;
 
-  getElement("highCount").textContent =
+  getElement("highCount")
+    .textContent =
     todoTasks.filter(
-      task => task.priority === "high"
+      task =>
+        task.priority === "high"
     ).length;
 
   const completionPercentage =
@@ -938,7 +1225,8 @@ function renderWebsite() {
         )
       : 0;
 
-  getElement("progressPercent").textContent =
+  getElement("progressPercent")
+    .textContent =
     `${completionPercentage}%`;
 
   getElement("progressRing")
@@ -949,63 +1237,31 @@ function renderWebsite() {
     );
 
   if (!activeTasks.length) {
-    getElement("progressText").textContent =
+    getElement("progressText")
+      .textContent =
       "No active tasks yet.";
-  } else if (completionPercentage === 100) {
-    getElement("progressText").textContent =
+  } else if (
+    completionPercentage === 100
+  ) {
+    getElement("progressText")
+      .textContent =
       "Excellent — every active task is complete.";
   } else {
-    getElement("progressText").textContent =
+    getElement("progressText")
+      .textContent =
       `${completedTasks.length} of ${activeTasks.length} active tasks completed.`;
   }
 
-  getElement("summaryTodo").textContent =
+  getElement("summaryTodo")
+    .textContent =
     todoTasks.length;
 
-  getElement("summaryDone").textContent =
+  getElement("summaryDone")
+    .textContent =
     completedTasks.length;
 
-  const priorityOrder = {
-    high: 0,
-    medium: 1,
-    low: 2
-  };
-
   const dashboardTasks =
-    [...todoTasks]
-      .sort(
-        (firstTask, secondTask) => {
-          const firstPriority =
-            priorityOrder[firstTask.priority] ?? 3;
-
-          const secondPriority =
-            priorityOrder[secondTask.priority] ?? 3;
-
-          if (
-            firstPriority !==
-            secondPriority
-          ) {
-            return (
-              firstPriority -
-              secondPriority
-            );
-          }
-
-          if (
-            firstTask.dueDate &&
-            secondTask.dueDate
-          ) {
-            return firstTask.dueDate
-              .localeCompare(
-                secondTask.dueDate
-              );
-          }
-
-          return firstTask.dueDate
-            ? -1
-            : 1;
-        }
-      )
+    sortTasks(todoTasks)
       .slice(0, 6);
 
   renderTaskList(
@@ -1015,16 +1271,17 @@ function renderWebsite() {
 
   renderTaskList(
     "completedTaskList",
-    completedTasks
+    sortTasks(completedTasks)
   );
 
   renderTaskList(
     "archiveTaskList",
-    archivedTasks
+    sortTasks(archivedTasks)
   );
 
   renderFilteredTasks();
   renderWeeklyPlanner();
+  renderMyTasks();
   updateUserDisplay();
 }
 
@@ -1052,26 +1309,41 @@ async function addTask(event) {
       .trim();
 
   const description =
-    getElement("taskDescription")
+    getElement(
+      "taskDescription"
+    )
       .value
       .trim();
 
   const department =
-    getElement("taskDepartment")
-      .value;
+    getElement(
+      "taskDepartment"
+    ).value;
 
   const priority =
-    getElement("taskPriority")
-      .value;
+    getElement(
+      "taskPriority"
+    ).value;
 
   const dueDate =
     getElement("taskDueDate")
       .value || null;
 
-  const assignedTo =
-    getElement("taskAssignedTo")
-      .value
-      .trim();
+  const assignedToUserId =
+    getElement(
+      "taskAssignedTo"
+    ).value || null;
+
+  const assignedProfile =
+    profiles.find(
+      profile =>
+        profile.id ===
+        assignedToUserId
+    );
+
+  const assignedToName =
+    assignedProfile?.full_name ||
+    null;
 
   if (!title) {
     showToast(
@@ -1095,7 +1367,9 @@ async function addTask(event) {
         'button[type="submit"]'
       );
 
-  submitButton.disabled = true;
+  submitButton.disabled =
+    true;
+
   submitButton.textContent =
     "Adding Task...";
 
@@ -1104,23 +1378,36 @@ async function addTask(event) {
       .from("tasks")
       .insert({
         title,
+
         description:
           description || null,
+
         department,
+
         priority,
+
         due_date:
           dueDate,
+
         assigned_to:
-          assignedTo || null,
+          assignedToName,
+
+        assigned_to_user_id:
+          assignedToUserId,
+
         created_by:
           currentUser.id,
+
         status:
           "todo",
+
         archived:
           false
       });
 
-  submitButton.disabled = false;
+  submitButton.disabled =
+    false;
+
   submitButton.textContent =
     "Add Task";
 
@@ -1156,6 +1443,36 @@ window.completeTask =
       return;
     }
 
+    const task =
+      tasks.find(
+        item =>
+          item.id === taskId
+      );
+
+    if (!task) {
+      showToast(
+        "Task could not be found."
+      );
+
+      return;
+    }
+
+    const assignedToSomeoneElse =
+      task.assignedToUserId &&
+      task.assignedToUserId !==
+        currentUser.id;
+
+    if (
+      assignedToSomeoneElse &&
+      !canManageTasks()
+    ) {
+      showToast(
+        "This task is assigned to another staff member."
+      );
+
+      return;
+    }
+
     const confirmed =
       confirm(
         "Mark this task as completed?"
@@ -1171,10 +1488,13 @@ window.completeTask =
         .update({
           status:
             "completed",
+
           completed_by:
             currentUser.id,
+
           completed_at:
-            new Date().toISOString()
+            new Date()
+              .toISOString()
         })
         .eq(
           "id",
@@ -1221,8 +1541,10 @@ window.reopenTask =
         .update({
           status:
             "todo",
+
           completed_by:
             null,
+
           completed_at:
             null
         })
@@ -1278,7 +1600,8 @@ window.archiveTask =
       await supabaseClient
         .from("tasks")
         .update({
-          archived: true
+          archived:
+            true
         })
         .eq(
           "id",
@@ -1319,7 +1642,8 @@ window.restoreTask =
       await supabaseClient
         .from("tasks")
         .update({
-          archived: false
+          archived:
+            false
         })
         .eq(
           "id",
@@ -1415,8 +1739,13 @@ function closeTaskModal() {
   getElement("taskForm")
     .reset();
 
-  getElement("taskPriority").value =
+  getElement("taskPriority")
+    .value =
     "medium";
+
+  getElement("taskAssignedTo")
+    .value =
+    "";
 }
 
 /* =========================================
@@ -1435,17 +1764,25 @@ function switchView(viewName) {
     return;
   }
 
-  currentView = viewName;
+  currentView =
+    viewName;
 
   const pageTitles = {
     dashboard:
       "Dashboard",
+
+    myTasks:
+      "My Tasks",
+
     planner:
       "Weekly Planner",
+
     tasks:
       "All Tasks",
+
     completed:
       "Completed Tasks",
+
     archive:
       "Archive"
   };
@@ -1459,14 +1796,18 @@ function switchView(viewName) {
     });
 
   document
-    .querySelectorAll(".nav-link")
+    .querySelectorAll(
+      ".nav-link"
+    )
     .forEach(button => {
       button.classList.remove(
         "active"
       );
     });
 
-  getElement(`${viewName}View`)
+  getElement(
+    `${viewName}View`
+  )
     ?.classList
     .add("active");
 
@@ -1477,7 +1818,8 @@ function switchView(viewName) {
     ?.classList
     .add("active");
 
-  getElement("pageTitle").textContent =
+  getElement("pageTitle")
+    .textContent =
     pageTitles[viewName] ||
     "StoreFlow";
 
@@ -1491,14 +1833,15 @@ function switchView(viewName) {
 }
 
 /* =========================================
-   REALTIME TASK UPDATES
+   REALTIME
 ========================================= */
 
 function subscribeToTaskChanges() {
   if (realtimeChannel) {
-    supabaseClient.removeChannel(
-      realtimeChannel
-    );
+    supabaseClient
+      .removeChannel(
+        realtimeChannel
+      );
   }
 
   realtimeChannel =
@@ -1509,9 +1852,14 @@ function subscribeToTaskChanges() {
       .on(
         "postgres_changes",
         {
-          event: "*",
-          schema: "public",
-          table: "tasks"
+          event:
+            "*",
+
+          schema:
+            "public",
+
+          table:
+            "tasks"
         },
         async () => {
           await loadTasks();
@@ -1532,13 +1880,17 @@ function subscribeToTaskChanges() {
 async function showStoreflowApp(user) {
   if (
     isInitialising &&
-    currentUser?.id === user.id
+    currentUser?.id ===
+      user.id
   ) {
     return;
   }
 
-  isInitialising = true;
-  currentUser = user;
+  isInitialising =
+    true;
+
+  currentUser =
+    user;
 
   try {
     const profileLoaded =
@@ -1549,36 +1901,61 @@ async function showStoreflowApp(user) {
     }
 
     await loadProfiles();
+
+    populateAssigneeDropdown();
+
     await loadTasks();
 
     setGreeting();
     updateUserDisplay();
     subscribeToTaskChanges();
 
-    hideElement("loginScreen");
-    showElement("storeflowApp");
+    hideElement(
+      "loginScreen"
+    );
+
+    showElement(
+      "storeflowApp"
+    );
   } finally {
-    isInitialising = false;
+    isInitialising =
+      false;
   }
 }
 
 function showLoginScreen() {
-  currentUser = null;
-  currentProfile = null;
+  currentUser =
+    null;
 
-  tasks = [];
-  profiles = [];
+  currentProfile =
+    null;
+
+  tasks =
+    [];
+
+  profiles =
+    [];
+
+  currentView =
+    "dashboard";
 
   if (realtimeChannel) {
-    supabaseClient.removeChannel(
-      realtimeChannel
-    );
+    supabaseClient
+      .removeChannel(
+        realtimeChannel
+      );
 
-    realtimeChannel = null;
+    realtimeChannel =
+      null;
   }
 
-  hideElement("storeflowApp");
-  showElement("loginScreen");
+  hideElement(
+    "storeflowApp"
+  );
+
+  showElement(
+    "loginScreen"
+  );
 
   const loginForm =
     getElement("loginForm");
@@ -1591,13 +1968,17 @@ function showLoginScreen() {
     getElement("loginError");
 
   if (loginError) {
-    loginError.textContent = "";
-    loginError.classList.add("hidden");
+    loginError.textContent =
+      "";
+
+    loginError.classList.add(
+      "hidden"
+    );
   }
 }
 
 /* =========================================
-   TOAST MESSAGE
+   TOAST
 ========================================= */
 
 function showToast(message) {
@@ -1608,13 +1989,16 @@ function showToast(message) {
     return;
   }
 
-  toast.textContent = message;
+  toast.textContent =
+    message;
 
   toast.classList.remove(
     "hidden"
   );
 
-  clearTimeout(toastTimer);
+  clearTimeout(
+    toastTimer
+  );
 
   toastTimer =
     setTimeout(() => {
@@ -1641,7 +2025,9 @@ getElement("logoutButton")
   );
 
 document
-  .querySelectorAll(".nav-link")
+  .querySelectorAll(
+    ".nav-link"
+  )
   .forEach(button => {
     button.addEventListener(
       "click",
@@ -1716,7 +2102,9 @@ getElement("searchInput")
     renderFilteredTasks
   );
 
-getElement("departmentFilter")
+getElement(
+  "departmentFilter"
+)
   ?.addEventListener(
     "change",
     renderFilteredTasks
@@ -1728,7 +2116,9 @@ getElement("statusFilter")
     renderFilteredTasks
   );
 
-getElement("priorityFilter")
+getElement(
+  "priorityFilter"
+)
   ?.addEventListener(
     "change",
     renderFilteredTasks
@@ -1742,7 +2132,9 @@ getElement("menuButton")
         .classList
         .toggle("open");
 
-      getElement("mobileOverlay")
+      getElement(
+        "mobileOverlay"
+      )
         .classList
         .toggle("show");
     }
@@ -1756,7 +2148,9 @@ getElement("mobileOverlay")
         .classList
         .remove("open");
 
-      getElement("mobileOverlay")
+      getElement(
+        "mobileOverlay"
+      )
         .classList
         .remove("show");
     }
@@ -1777,7 +2171,7 @@ document.addEventListener(
 );
 
 /* =========================================
-   AUTHENTICATION STATE
+   AUTH STATE
 ========================================= */
 
 supabaseClient.auth
@@ -1802,7 +2196,7 @@ supabaseClient.auth
   );
 
 /* =========================================
-   INITIALISE STOREFLOW
+   INITIALISE
 ========================================= */
 
 async function initialiseStoreflow() {

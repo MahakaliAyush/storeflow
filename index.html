@@ -1,4 +1,3 @@
-```html
 <!DOCTYPE html>
 <html lang="en">
 
@@ -145,8 +144,6 @@
     id="storeflowApp"
   >
 
-    <!-- SIDEBAR -->
-
     <aside
       class="sidebar"
       id="sidebar"
@@ -204,6 +201,15 @@
         <button
           type="button"
           class="nav-link"
+          data-view="myTasks"
+        >
+          <span>◎</span>
+          My Tasks
+        </button>
+
+        <button
+          type="button"
+          class="nav-link"
           data-view="planner"
         >
           <span>▦</span>
@@ -254,18 +260,14 @@
         </p>
 
         <small>
-          StoreFlow v2.0
+          StoreFlow v3.0
         </small>
 
       </div>
 
     </aside>
 
-    <!-- MAIN APPLICATION -->
-
     <main class="main">
-
-      <!-- TOP BAR -->
 
       <header class="topbar">
 
@@ -328,11 +330,9 @@
 
       </header>
 
-      <!-- PAGE CONTENT -->
-
       <section class="content">
 
-        <!-- DASHBOARD VIEW -->
+        <!-- DASHBOARD -->
 
         <section
           id="dashboardView"
@@ -363,9 +363,9 @@
               <button
                 type="button"
                 class="secondary-button"
-                data-go-view="planner"
+                data-go-view="myTasks"
               >
-                Weekly Planner
+                My Tasks
               </button>
 
               <button
@@ -378,8 +378,6 @@
             </div>
 
           </div>
-
-          <!-- STATISTICS -->
 
           <div class="stats-grid">
 
@@ -481,8 +479,6 @@
 
           </div>
 
-          <!-- DASHBOARD TASKS AND PROGRESS -->
-
           <div class="dashboard-grid">
 
             <div class="panel">
@@ -525,11 +521,11 @@
                 <div>
 
                   <p class="section-label">
-                    WEEKLY PROGRESS
+                    TEAM PROGRESS
                   </p>
 
                   <h3>
-                    Team completion
+                    Task completion
                   </h3>
 
                 </div>
@@ -585,7 +581,52 @@
 
         </section>
 
-        <!-- WEEKLY PLANNER VIEW -->
+        <!-- MY TASKS -->
+
+        <section
+          id="myTasksView"
+          class="view"
+        >
+
+          <div class="page-heading">
+
+            <div>
+
+              <p class="section-label">
+                PERSONAL WORK QUEUE
+              </p>
+
+              <h3>
+                My Tasks
+              </h3>
+
+              <p>
+                Tasks assigned directly to you and tasks available to everyone.
+              </p>
+
+            </div>
+
+            <button
+              type="button"
+              class="primary-button open-task-modal"
+            >
+              ＋ Add Task
+            </button>
+
+          </div>
+
+          <div class="panel">
+
+            <div
+              id="myTaskList"
+              class="task-list"
+            ></div>
+
+          </div>
+
+        </section>
+
+        <!-- WEEKLY PLANNER -->
 
         <section
           id="plannerView"
@@ -626,7 +667,7 @@
 
         </section>
 
-        <!-- ALL TASKS VIEW -->
+        <!-- ALL TASKS -->
 
         <section
           id="tasksView"
@@ -763,7 +804,7 @@
 
         </section>
 
-        <!-- COMPLETED TASKS VIEW -->
+        <!-- COMPLETED -->
 
         <section
           id="completedView"
@@ -801,7 +842,7 @@
 
         </section>
 
-        <!-- ARCHIVE VIEW -->
+        <!-- ARCHIVE -->
 
         <section
           id="archiveView"
@@ -840,8 +881,6 @@
         </section>
 
       </section>
-
-      <!-- FOOTER -->
 
       <footer class="site-footer">
 
@@ -1021,12 +1060,13 @@
 
             Assigned to
 
-            <input
-              id="taskAssignedTo"
-              type="text"
-              maxlength="60"
-              placeholder="Any staff member"
-            >
+            <select id="taskAssignedTo">
+
+              <option value="">
+                Anyone
+              </option>
+
+            </select>
 
           </label>
 
@@ -1077,4 +1117,3 @@
 </body>
 
 </html>
-```
