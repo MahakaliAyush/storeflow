@@ -1,3 +1,7 @@
+/* =========================================
+   STOREFLOW — SUPABASE USERNAME VERSION
+========================================= */
+
 const supabaseClient =
   window.supabase.createClient(
     STOREFLOW_CONFIG.supabaseUrl,
@@ -11,13 +15,24 @@ const supabaseClient =
     }
   );
 
+/* =========================================
+   GLOBAL STATE
+========================================= */
+
 let tasks = [];
 let profiles = [];
+
 let currentUser = null;
 let currentProfile = null;
 let currentView = "dashboard";
+
 let realtimeChannel = null;
 let toastTimer = null;
+let isInitialising = false;
+
+/* =========================================
+   ELEMENT HELPERS
+========================================= */
 
 function getElement(id) {
   return document.getElementById(id);
@@ -30,6 +45,10 @@ function showElement(id) {
 function hideElement(id) {
   getElement(id)?.classList.add("hidden");
 }
+
+/* =========================================
+   SECURITY AND TEXT HELPERS
+========================================= */
 
 function escapeHtml(value = "") {
   return String(value).replace(
@@ -60,23 +79,18 @@ function getProfileName(userId) {
     return "";
   }
 
-  const profile =
-    profiles.find(
-      item => item.id === userId
-    );
-
-  return (
-    profile?.full_name ||
-    "Staff member"
+  const profile = profiles.find(
+    item => item.id === userId
   );
+
+  return profile?.full_name || "Staff member";
 }
 
 function getInitials(name = "") {
-  const words =
-    name
-      .trim()
-      .split(/\s+/)
-      .filter(Boolean);
+  const words = name
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
 
   if (!words.length) {
     return "SF";
@@ -87,6 +101,10 @@ function getInitials(name = "") {
     .map(word => word[0].toUpperCase())
     .join("");
 }
+
+/* =========================================
+   DATE HELPERS
+========================================= */
 
 function formatDate(value) {
   if (!value) {
@@ -118,30 +136,39 @@ function formatDateTime(value) {
       hour: "numeric",
       minute: "2-digit"
     }
-  ).format(
-    new Date(value)
-  );
+  ).format(new Date(value));
+}
+
+function getLocalDateKey(date) {
+  const year = date.getFullYear();
+
+  const month = String(
+    date.getMonth() + 1
+  ).padStart(2, "0");
+
+  const day = String(
+    date.getDate()
+  ).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
 }
 
 function setGreeting() {
-  const hour =
+  const currentHour =
     new Date().getHours();
 
-  let greeting =
-    "Good evening";
+  let greeting = "Good evening";
 
-  if (hour < 12) {
-    greeting =
-      "Good morning";
-  } else if (hour < 17) {
-    greeting =
-      "Good afternoon";
+  if (currentHour < 12) {
+    greeting = "Good morning";
+  } else if (currentHour < 17) {
+    greeting = "Good afternoon";
   }
 
   const firstName =
     currentProfile?.full_name
       ?.trim()
-      ?.split(" ")[0] ||
+      ?.split(/\s+/)[0] ||
     "Team";
 
   getElement("greeting").textContent =
@@ -161,83 +188,136 @@ function setGreeting() {
       .toUpperCase();
 }
 
+/* =========================================
+   USERNAME LOGIN
+========================================= */
+
 async function signIn(event) {
   event.preventDefault();
 
-  const email =
-    getElement("loginEmail")
+  const username =
+    getElement("loginUsername")
       .value
-      .trim();
+      .trim()
+      .toLowerCase();
 
   const password =
     getElement("loginPassword")
       .value;
 
-  const button =
+  const loginButton =
     getElement("loginButton");
 
-  const errorBox =
+  const loginError =
     getElement("loginError");
 
-  errorBox.textContent = "";
-  errorBox.classList.add("hidden");
+  loginError.textContent = "";
+  loginError.classList.add("hidden");
 
-  button.textContent =
+  const usernamePattern =
+    /^[a-z0-9._-]+$/;
+
+  if (!usernamePattern.test(username)) {
+    loginError.textContent =
+      "Username can only contain letters, numbers, dots, dashes and underscores.";
+
+    loginError.classList.remove("hidden");
+
+    return;
+  }
+
+  const hiddenEmail =
+    `${username}@storeflow.internal`;
+
+  loginButton.textContent =
     "Signing In...";
 
-  button.classList.add(
+  loginButton.classList.add(
     "loading-button"
   );
 
-  const { error } =
-    await supabaseClient.auth
-      .signInWithPassword({
-        email,
-        password
-      });
+  try {
+    const { error } =
+      await supabaseClient.auth
+        .signInWithPassword({
+          email: hiddenEmail,
+          password
+        });
 
-  button.textContent =
-    "Sign In";
+    if (error) {
+      throw error;
+    }
+  } catch (error) {
+    console.error(
+      "StoreFlow login error:",
+      error
+    );
 
-  button.classList.remove(
-    "loading-button"
-  );
+    loginError.textContent =
+      "Incorrect username or password.";
 
-  if (error) {
-    errorBox.textContent =
-      error.message;
-
-    errorBox.classList.remove(
+    loginError.classList.remove(
       "hidden"
+    );
+  } finally {
+    loginButton.textContent =
+      "Sign In";
+
+    loginButton.classList.remove(
+      "loading-button"
     );
   }
 }
 
 async function signOut() {
+  const logoutButton =
+    getElement("logoutButton");
+
+  logoutButton.disabled = true;
+  logoutButton.textContent = "Logging Out...";
+
   const { error } =
-    await supabaseClient.auth
-      .signOut();
+    await supabaseClient.auth.signOut();
+
+  logoutButton.disabled = false;
+  logoutButton.textContent = "Log Out";
 
   if (error) {
-    showToast(error.message);
+    console.error(
+      "Logout error:",
+      error
+    );
+
+    showToast(
+      `Could not log out: ${error.message}`
+    );
   }
 }
 
+/* =========================================
+   CURRENT USER PROFILE
+========================================= */
+
 async function loadCurrentProfile() {
+  if (!currentUser) {
+    currentProfile = null;
+    return false;
+  }
+
   const { data, error } =
     await supabaseClient
       .from("profiles")
       .select(
         "id, full_name, role, active"
       )
-      .eq(
-        "id",
-        currentUser.id
-      )
+      .eq("id", currentUser.id)
       .single();
 
   if (error) {
-    console.error(error);
+    console.error(
+      "Current profile loading error:",
+      error
+    );
 
     showToast(
       "Your profile could not be loaded."
@@ -247,11 +327,11 @@ async function loadCurrentProfile() {
   }
 
   if (!data.active) {
-    await signOut();
-
     showToast(
       "Your StoreFlow account is inactive."
     );
+
+    await supabaseClient.auth.signOut();
 
     return false;
   }
@@ -272,8 +352,7 @@ function updateUserDisplay() {
     fullName;
 
   getElement("signedInRole").textContent =
-    currentProfile?.role ||
-    "staff";
+    currentProfile?.role || "staff";
 
   getElement("userAvatar").textContent =
     getInitials(fullName);
@@ -288,7 +367,18 @@ function updateUserDisplay() {
           ? ""
           : "none";
     });
+
+  if (
+    currentView === "archive" &&
+    !canManageTasks()
+  ) {
+    switchView("dashboard");
+  }
 }
+
+/* =========================================
+   LOAD ACTIVE STAFF PROFILES
+========================================= */
 
 async function loadProfiles() {
   const { data, error } =
@@ -297,20 +387,31 @@ async function loadProfiles() {
       .select(
         "id, full_name, role, active"
       )
-      .eq(
-        "active",
-        true
-      )
-      .order("full_name");
+      .eq("active", true)
+      .order(
+        "full_name",
+        {
+          ascending: true
+        }
+      );
 
   if (error) {
-    console.error(error);
+    console.error(
+      "Profile list loading error:",
+      error
+    );
+
     profiles = [];
+
     return;
   }
 
   profiles = data || [];
 }
+
+/* =========================================
+   LOAD SHARED TASKS
+========================================= */
 
 async function loadTasks() {
   const { data, error } =
@@ -325,7 +426,10 @@ async function loadTasks() {
       );
 
   if (error) {
-    console.error(error);
+    console.error(
+      "Task loading error:",
+      error
+    );
 
     showToast(
       `Could not load tasks: ${error.message}`
@@ -334,47 +438,46 @@ async function loadTasks() {
     return;
   }
 
-  tasks =
-    (data || []).map(task => ({
-      id: task.id,
-      title: task.title,
-      description:
-        task.description || "",
-      department:
-        task.department,
-      priority:
-        task.priority,
-      dueDate:
-        task.due_date || "",
-      assignedTo:
-        task.assigned_to || "",
-      createdBy:
-        task.created_by,
-      createdAt:
-        task.created_at,
-      status:
-        task.status,
-      completedBy:
-        task.completed_by,
-      completedAt:
-        task.completed_at,
-      archived:
-        task.archived
-    }));
+  tasks = (data || []).map(task => ({
+    id: task.id,
+    title: task.title,
+    description:
+      task.description || "",
+    department:
+      task.department,
+    priority:
+      task.priority,
+    dueDate:
+      task.due_date || "",
+    assignedTo:
+      task.assigned_to || "",
+    createdBy:
+      task.created_by,
+    createdAt:
+      task.created_at,
+    status:
+      task.status,
+    completedBy:
+      task.completed_by,
+    completedAt:
+      task.completed_at,
+    archived:
+      task.archived
+  }));
 
   renderWebsite();
 }
 
+/* =========================================
+   TASK CARD
+========================================= */
+
 function createTaskCard(task) {
   const createdByName =
-    getProfileName(
-      task.createdBy
-    );
+    getProfileName(task.createdBy);
 
   const completedByName =
-    getProfileName(
-      task.completedBy
-    );
+    getProfileName(task.completedBy);
 
   const completeButton =
     task.status === "todo" &&
@@ -416,7 +519,7 @@ function createTaskCard(task) {
       `
       : "";
 
-  const restoreButtons =
+  const archivedButtons =
     canManageTasks() &&
     task.archived
       ? `
@@ -440,7 +543,7 @@ function createTaskCard(task) {
     <article
       class="
         task-card
-        ${task.priority}
+        ${escapeHtml(task.priority)}
         ${
           task.status === "completed"
             ? "completed"
@@ -477,9 +580,9 @@ function createTaskCard(task) {
         <div class="badges">
 
           <span
-            class="badge priority-${task.priority}"
+            class="badge priority-${escapeHtml(task.priority)}"
           >
-            ${task.priority.toUpperCase()}
+            ${escapeHtml(task.priority.toUpperCase())}
           </span>
 
           <span class="badge">
@@ -531,7 +634,7 @@ function createTaskCard(task) {
         ${completeButton}
         ${reopenButton}
         ${archiveButton}
-        ${restoreButtons}
+        ${archivedButtons}
 
       </div>
 
@@ -545,6 +648,10 @@ function renderTaskList(
 ) {
   const element =
     getElement(elementId);
+
+  if (!element) {
+    return;
+  }
 
   if (!taskList.length) {
     element.innerHTML = `
@@ -568,7 +675,18 @@ function renderTaskList(
       .join("");
 }
 
+/* =========================================
+   WEEKLY PLANNER
+========================================= */
+
 function renderWeeklyPlanner() {
+  const weekBoard =
+    getElement("weekBoard");
+
+  if (!weekBoard) {
+    return;
+  }
+
   const days = [
     "Sunday",
     "Monday",
@@ -579,18 +697,24 @@ function renderWeeklyPlanner() {
     "Saturday"
   ];
 
-  const today =
-    new Date();
+  const today = new Date();
 
   const startOfWeek =
     new Date(today);
+
+  startOfWeek.setHours(
+    0,
+    0,
+    0,
+    0
+  );
 
   startOfWeek.setDate(
     today.getDate() -
     today.getDay()
   );
 
-  getElement("weekBoard").innerHTML =
+  weekBoard.innerHTML =
     days.map(
       (dayName, index) => {
         const date =
@@ -602,9 +726,7 @@ function renderWeeklyPlanner() {
         );
 
         const dateKey =
-          date
-            .toISOString()
-            .slice(0, 10);
+          getLocalDateKey(date);
 
         const dayTasks =
           tasks.filter(task => {
@@ -636,7 +758,7 @@ function renderWeeklyPlanner() {
                     <p>
                       ${escapeHtml(task.assignedTo || "Anyone")}
                       ·
-                      ${task.priority}
+                      ${escapeHtml(task.priority)}
                     </p>
 
                   </div>
@@ -681,24 +803,46 @@ function renderWeeklyPlanner() {
     ).join("");
 }
 
+/* =========================================
+   TASK FILTERS
+========================================= */
+
 function renderFilteredTasks() {
+  const searchInput =
+    getElement("searchInput");
+
+  const departmentFilter =
+    getElement("departmentFilter");
+
+  const statusFilter =
+    getElement("statusFilter");
+
+  const priorityFilter =
+    getElement("priorityFilter");
+
+  if (
+    !searchInput ||
+    !departmentFilter ||
+    !statusFilter ||
+    !priorityFilter
+  ) {
+    return;
+  }
+
   const search =
-    getElement("searchInput")
+    searchInput
       .value
       .trim()
       .toLowerCase();
 
   const department =
-    getElement("departmentFilter")
-      .value;
+    departmentFilter.value;
 
   const status =
-    getElement("statusFilter")
-      .value;
+    statusFilter.value;
 
   const priority =
-    getElement("priorityFilter")
-      .value;
+    priorityFilter.value;
 
   const filteredTasks =
     tasks.filter(task => {
@@ -709,28 +853,33 @@ function renderFilteredTasks() {
       const searchableText = `
         ${task.title}
         ${task.description}
+        ${task.department}
         ${task.assignedTo}
         ${getProfileName(task.createdBy)}
         ${getProfileName(task.completedBy)}
       `.toLowerCase();
 
+      const matchesSearch =
+        !search ||
+        searchableText.includes(search);
+
+      const matchesDepartment =
+        department === "all" ||
+        task.department === department;
+
+      const matchesStatus =
+        status === "all" ||
+        task.status === status;
+
+      const matchesPriority =
+        priority === "all" ||
+        task.priority === priority;
+
       return (
-        (
-          !search ||
-          searchableText.includes(search)
-        ) &&
-        (
-          department === "all" ||
-          task.department === department
-        ) &&
-        (
-          status === "all" ||
-          task.status === status
-        ) &&
-        (
-          priority === "all" ||
-          task.priority === priority
-        )
+        matchesSearch &&
+        matchesDepartment &&
+        matchesStatus &&
+        matchesPriority
       );
     });
 
@@ -739,6 +888,10 @@ function renderFilteredTasks() {
     filteredTasks
   );
 }
+
+/* =========================================
+   RENDER WEBSITE
+========================================= */
 
 function renderWebsite() {
   const activeTasks =
@@ -775,7 +928,7 @@ function renderWebsite() {
       task => task.priority === "high"
     ).length;
 
-  const percentage =
+  const completionPercentage =
     activeTasks.length
       ? Math.round(
           (
@@ -786,21 +939,25 @@ function renderWebsite() {
       : 0;
 
   getElement("progressPercent").textContent =
-    `${percentage}%`;
+    `${completionPercentage}%`;
 
   getElement("progressRing")
     .style
     .setProperty(
       "--p",
-      percentage
+      completionPercentage
     );
 
-  getElement("progressText").textContent =
-    activeTasks.length === 0
-      ? "No active tasks yet."
-      : percentage === 100
-        ? "Excellent — every active task is complete."
-        : `${completedTasks.length} of ${activeTasks.length} active tasks completed.`;
+  if (!activeTasks.length) {
+    getElement("progressText").textContent =
+      "No active tasks yet.";
+  } else if (completionPercentage === 100) {
+    getElement("progressText").textContent =
+      "Excellent — every active task is complete.";
+  } else {
+    getElement("progressText").textContent =
+      `${completedTasks.length} of ${activeTasks.length} active tasks completed.`;
+  }
 
   getElement("summaryTodo").textContent =
     todoTasks.length;
@@ -817,9 +974,37 @@ function renderWebsite() {
   const dashboardTasks =
     [...todoTasks]
       .sort(
-        (first, second) =>
-          priorityOrder[first.priority] -
-          priorityOrder[second.priority]
+        (firstTask, secondTask) => {
+          const firstPriority =
+            priorityOrder[firstTask.priority] ?? 3;
+
+          const secondPriority =
+            priorityOrder[secondTask.priority] ?? 3;
+
+          if (
+            firstPriority !==
+            secondPriority
+          ) {
+            return (
+              firstPriority -
+              secondPriority
+            );
+          }
+
+          if (
+            firstTask.dueDate &&
+            secondTask.dueDate
+          ) {
+            return firstTask.dueDate
+              .localeCompare(
+                secondTask.dueDate
+              );
+          }
+
+          return firstTask.dueDate
+            ? -1
+            : 1;
+        }
       )
       .slice(0, 6);
 
@@ -840,10 +1025,26 @@ function renderWebsite() {
 
   renderFilteredTasks();
   renderWeeklyPlanner();
+  updateUserDisplay();
 }
+
+/* =========================================
+   ADD TASK
+========================================= */
 
 async function addTask(event) {
   event.preventDefault();
+
+  if (
+    !currentUser ||
+    !currentProfile
+  ) {
+    showToast(
+      "Please log in again."
+    );
+
+    return;
+  }
 
   const title =
     getElement("taskTitle")
@@ -872,6 +1073,32 @@ async function addTask(event) {
       .value
       .trim();
 
+  if (!title) {
+    showToast(
+      "Please enter a task title."
+    );
+
+    return;
+  }
+
+  if (!department) {
+    showToast(
+      "Please choose a department."
+    );
+
+    return;
+  }
+
+  const submitButton =
+    getElement("taskForm")
+      .querySelector(
+        'button[type="submit"]'
+      );
+
+  submitButton.disabled = true;
+  submitButton.textContent =
+    "Adding Task...";
+
   const { error } =
     await supabaseClient
       .from("tasks")
@@ -893,8 +1120,15 @@ async function addTask(event) {
           false
       });
 
+  submitButton.disabled = false;
+  submitButton.textContent =
+    "Add Task";
+
   if (error) {
-    console.error(error);
+    console.error(
+      "Task creation error:",
+      error
+    );
 
     showToast(
       `Could not add task: ${error.message}`
@@ -912,8 +1146,16 @@ async function addTask(event) {
   await loadTasks();
 }
 
+/* =========================================
+   COMPLETE TASK
+========================================= */
+
 window.completeTask =
   async function(taskId) {
+    if (!currentUser) {
+      return;
+    }
+
     const confirmed =
       confirm(
         "Mark this task as completed?"
@@ -940,6 +1182,11 @@ window.completeTask =
         );
 
     if (error) {
+      console.error(
+        "Complete task error:",
+        error
+      );
+
       showToast(
         `Could not complete task: ${error.message}`
       );
@@ -954,9 +1201,17 @@ window.completeTask =
     await loadTasks();
   };
 
+/* =========================================
+   REOPEN TASK
+========================================= */
+
 window.reopenTask =
   async function(taskId) {
     if (!canManageTasks()) {
+      showToast(
+        "Only managers and owners can reopen tasks."
+      );
+
       return;
     }
 
@@ -977,7 +1232,15 @@ window.reopenTask =
         );
 
     if (error) {
-      showToast(error.message);
+      console.error(
+        "Reopen task error:",
+        error
+      );
+
+      showToast(
+        `Could not reopen task: ${error.message}`
+      );
+
       return;
     }
 
@@ -988,17 +1251,26 @@ window.reopenTask =
     await loadTasks();
   };
 
+/* =========================================
+   ARCHIVE TASK
+========================================= */
+
 window.archiveTask =
   async function(taskId) {
     if (!canManageTasks()) {
+      showToast(
+        "Only managers and owners can archive tasks."
+      );
+
       return;
     }
 
-    if (
-      !confirm(
+    const confirmed =
+      confirm(
         "Archive this task?"
-      )
-    ) {
+      );
+
+    if (!confirmed) {
       return;
     }
 
@@ -1006,8 +1278,7 @@ window.archiveTask =
       await supabaseClient
         .from("tasks")
         .update({
-          archived:
-            true
+          archived: true
         })
         .eq(
           "id",
@@ -1015,7 +1286,15 @@ window.archiveTask =
         );
 
     if (error) {
-      showToast(error.message);
+      console.error(
+        "Archive task error:",
+        error
+      );
+
+      showToast(
+        `Could not archive task: ${error.message}`
+      );
+
       return;
     }
 
@@ -1025,6 +1304,10 @@ window.archiveTask =
 
     await loadTasks();
   };
+
+/* =========================================
+   RESTORE TASK
+========================================= */
 
 window.restoreTask =
   async function(taskId) {
@@ -1036,8 +1319,7 @@ window.restoreTask =
       await supabaseClient
         .from("tasks")
         .update({
-          archived:
-            false
+          archived: false
         })
         .eq(
           "id",
@@ -1045,7 +1327,15 @@ window.restoreTask =
         );
 
     if (error) {
-      showToast(error.message);
+      console.error(
+        "Restore task error:",
+        error
+      );
+
+      showToast(
+        `Could not restore task: ${error.message}`
+      );
+
       return;
     }
 
@@ -1056,17 +1346,26 @@ window.restoreTask =
     await loadTasks();
   };
 
+/* =========================================
+   DELETE TASK
+========================================= */
+
 window.deleteTask =
   async function(taskId) {
     if (!canManageTasks()) {
+      showToast(
+        "Only managers and owners can delete tasks."
+      );
+
       return;
     }
 
-    if (
-      !confirm(
-        "Permanently delete this task?"
-      )
-    ) {
+    const confirmed =
+      confirm(
+        "Permanently delete this task? This cannot be undone."
+      );
+
+    if (!confirmed) {
       return;
     }
 
@@ -1080,7 +1379,15 @@ window.deleteTask =
         );
 
     if (error) {
-      showToast(error.message);
+      console.error(
+        "Delete task error:",
+        error
+      );
+
+      showToast(
+        `Could not delete task: ${error.message}`
+      );
+
       return;
     }
 
@@ -1091,33 +1398,46 @@ window.deleteTask =
     await loadTasks();
   };
 
+/* =========================================
+   TASK MODAL
+========================================= */
+
 function openTaskModal() {
   showElement("taskModal");
 
-  getElement("taskTitle").focus();
+  getElement("taskTitle")
+    .focus();
 }
 
 function closeTaskModal() {
   hideElement("taskModal");
 
-  getElement("taskForm").reset();
+  getElement("taskForm")
+    .reset();
 
   getElement("taskPriority").value =
     "medium";
 }
+
+/* =========================================
+   NAVIGATION
+========================================= */
 
 function switchView(viewName) {
   if (
     viewName === "archive" &&
     !canManageTasks()
   ) {
+    showToast(
+      "Only managers and owners can access the archive."
+    );
+
     return;
   }
 
-  currentView =
-    viewName;
+  currentView = viewName;
 
-  const titles = {
+  const pageTitles = {
     dashboard:
       "Dashboard",
     planner:
@@ -1133,17 +1453,21 @@ function switchView(viewName) {
   document
     .querySelectorAll(".view")
     .forEach(view => {
-      view.classList.remove("active");
+      view.classList.remove(
+        "active"
+      );
     });
 
   document
     .querySelectorAll(".nav-link")
     .forEach(button => {
-      button.classList.remove("active");
+      button.classList.remove(
+        "active"
+      );
     });
 
   getElement(`${viewName}View`)
-    .classList
+    ?.classList
     .add("active");
 
   document
@@ -1154,7 +1478,8 @@ function switchView(viewName) {
     .add("active");
 
   getElement("pageTitle").textContent =
-    titles[viewName];
+    pageTitles[viewName] ||
+    "StoreFlow";
 
   getElement("sidebar")
     .classList
@@ -1165,12 +1490,15 @@ function switchView(viewName) {
     .remove("show");
 }
 
+/* =========================================
+   REALTIME TASK UPDATES
+========================================= */
+
 function subscribeToTaskChanges() {
   if (realtimeChannel) {
-    supabaseClient
-      .removeChannel(
-        realtimeChannel
-      );
+    supabaseClient.removeChannel(
+      realtimeChannel
+    );
   }
 
   realtimeChannel =
@@ -1181,85 +1509,112 @@ function subscribeToTaskChanges() {
       .on(
         "postgres_changes",
         {
-          event:
-            "*",
-          schema:
-            "public",
-          table:
-            "tasks"
+          event: "*",
+          schema: "public",
+          table: "tasks"
         },
         async () => {
           await loadTasks();
         }
       )
-      .subscribe();
+      .subscribe(status => {
+        console.log(
+          "Realtime status:",
+          status
+        );
+      });
 }
 
+/* =========================================
+   SHOW APPLICATION
+========================================= */
+
 async function showStoreflowApp(user) {
-  currentUser =
-    user;
-
-  const profileLoaded =
-    await loadCurrentProfile();
-
-  if (!profileLoaded) {
+  if (
+    isInitialising &&
+    currentUser?.id === user.id
+  ) {
     return;
   }
 
-  await loadProfiles();
-  await loadTasks();
+  isInitialising = true;
+  currentUser = user;
 
-  setGreeting();
-  updateUserDisplay();
-  subscribeToTaskChanges();
+  try {
+    const profileLoaded =
+      await loadCurrentProfile();
 
-  hideElement("loginScreen");
-  showElement("storeflowApp");
+    if (!profileLoaded) {
+      return;
+    }
+
+    await loadProfiles();
+    await loadTasks();
+
+    setGreeting();
+    updateUserDisplay();
+    subscribeToTaskChanges();
+
+    hideElement("loginScreen");
+    showElement("storeflowApp");
+  } finally {
+    isInitialising = false;
+  }
 }
 
 function showLoginScreen() {
-  currentUser =
-    null;
+  currentUser = null;
+  currentProfile = null;
 
-  currentProfile =
-    null;
-
-  tasks =
-    [];
-
-  profiles =
-    [];
+  tasks = [];
+  profiles = [];
 
   if (realtimeChannel) {
-    supabaseClient
-      .removeChannel(
-        realtimeChannel
-      );
+    supabaseClient.removeChannel(
+      realtimeChannel
+    );
 
-    realtimeChannel =
-      null;
+    realtimeChannel = null;
   }
 
   hideElement("storeflowApp");
   showElement("loginScreen");
 
-  getElement("loginForm").reset();
+  const loginForm =
+    getElement("loginForm");
+
+  if (loginForm) {
+    loginForm.reset();
+  }
+
+  const loginError =
+    getElement("loginError");
+
+  if (loginError) {
+    loginError.textContent = "";
+    loginError.classList.add("hidden");
+  }
 }
+
+/* =========================================
+   TOAST MESSAGE
+========================================= */
 
 function showToast(message) {
   const toast =
     getElement("toast");
 
-  toast.textContent =
-    message;
+  if (!toast) {
+    return;
+  }
+
+  toast.textContent = message;
 
   toast.classList.remove(
     "hidden"
   );
 
-  clearTimeout(
-    toastTimer
-  );
+  clearTimeout(toastTimer);
 
   toastTimer =
     setTimeout(() => {
@@ -1269,14 +1624,18 @@ function showToast(message) {
     }, 3000);
 }
 
+/* =========================================
+   EVENT LISTENERS
+========================================= */
+
 getElement("loginForm")
-  .addEventListener(
+  ?.addEventListener(
     "submit",
     signIn
   );
 
 getElement("logoutButton")
-  .addEventListener(
+  ?.addEventListener(
     "click",
     signOut
   );
@@ -1295,7 +1654,9 @@ document
   });
 
 document
-  .querySelectorAll("[data-go-view]")
+  .querySelectorAll(
+    "[data-go-view]"
+  )
   .forEach(button => {
     button.addEventListener(
       "click",
@@ -1308,7 +1669,9 @@ document
   });
 
 document
-  .querySelectorAll(".open-task-modal")
+  .querySelectorAll(
+    ".open-task-modal"
+  )
   .forEach(button => {
     button.addEventListener(
       "click",
@@ -1317,19 +1680,19 @@ document
   });
 
 getElement("closeModal")
-  .addEventListener(
+  ?.addEventListener(
     "click",
     closeTaskModal
   );
 
 getElement("cancelModal")
-  .addEventListener(
+  ?.addEventListener(
     "click",
     closeTaskModal
   );
 
 getElement("taskModal")
-  .addEventListener(
+  ?.addEventListener(
     "click",
     event => {
       if (
@@ -1342,37 +1705,37 @@ getElement("taskModal")
   );
 
 getElement("taskForm")
-  .addEventListener(
+  ?.addEventListener(
     "submit",
     addTask
   );
 
 getElement("searchInput")
-  .addEventListener(
+  ?.addEventListener(
     "input",
     renderFilteredTasks
   );
 
 getElement("departmentFilter")
-  .addEventListener(
+  ?.addEventListener(
     "change",
     renderFilteredTasks
   );
 
 getElement("statusFilter")
-  .addEventListener(
+  ?.addEventListener(
     "change",
     renderFilteredTasks
   );
 
 getElement("priorityFilter")
-  .addEventListener(
+  ?.addEventListener(
     "change",
     renderFilteredTasks
   );
 
 getElement("menuButton")
-  .addEventListener(
+  ?.addEventListener(
     "click",
     () => {
       getElement("sidebar")
@@ -1386,7 +1749,7 @@ getElement("menuButton")
   );
 
 getElement("mobileOverlay")
-  .addEventListener(
+  ?.addEventListener(
     "click",
     () => {
       getElement("sidebar")
@@ -1399,12 +1762,35 @@ getElement("mobileOverlay")
     }
   );
 
+document.addEventListener(
+  "keydown",
+  event => {
+    if (
+      event.key === "Escape" &&
+      !getElement("taskModal")
+        ?.classList
+        .contains("hidden")
+    ) {
+      closeTaskModal();
+    }
+  }
+);
+
+/* =========================================
+   AUTHENTICATION STATE
+========================================= */
+
 supabaseClient.auth
   .onAuthStateChange(
     async (
       event,
       session
     ) => {
+      console.log(
+        "Authentication event:",
+        event
+      );
+
       if (session?.user) {
         await showStoreflowApp(
           session.user
@@ -1414,6 +1800,10 @@ supabaseClient.auth
       }
     }
   );
+
+/* =========================================
+   INITIALISE STOREFLOW
+========================================= */
 
 async function initialiseStoreflow() {
   const {
@@ -1426,8 +1816,13 @@ async function initialiseStoreflow() {
       .getSession();
 
   if (error) {
-    console.error(error);
+    console.error(
+      "Session loading error:",
+      error
+    );
+
     showLoginScreen();
+
     return;
   }
 
