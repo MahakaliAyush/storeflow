@@ -1,5 +1,5 @@
 /* =========================================
-   STOREFLOW — SUPABASE V3
+   STOREFLOW — SUPABASE V4
 ========================================= */
 
 const supabaseClient =
@@ -15,10 +15,6 @@ const supabaseClient =
     }
   );
 
-/* =========================================
-   GLOBAL STATE
-========================================= */
-
 let tasks = [];
 let profiles = [];
 
@@ -29,10 +25,6 @@ let currentView = "dashboard";
 let realtimeChannel = null;
 let toastTimer = null;
 let isInitialising = false;
-
-/* =========================================
-   ELEMENT HELPERS
-========================================= */
 
 function getElement(id) {
   return document.getElementById(id);
@@ -45,10 +37,6 @@ function showElement(id) {
 function hideElement(id) {
   getElement(id)?.classList.add("hidden");
 }
-
-/* =========================================
-   SECURITY AND TEXT HELPERS
-========================================= */
 
 function escapeHtml(value = "") {
   return String(value).replace(
@@ -84,10 +72,7 @@ function getProfileName(userId) {
       item => item.id === userId
     );
 
-  return (
-    profile?.full_name ||
-    "Staff member"
-  );
+  return profile?.full_name || "Staff member";
 }
 
 function getAssignedProfileName(task) {
@@ -95,15 +80,14 @@ function getAssignedProfileName(task) {
     return "Anyone";
   }
 
-  const assignedProfile =
+  const profile =
     profiles.find(
-      profile =>
-        profile.id ===
-        task.assignedToUserId
+      item =>
+        item.id === task.assignedToUserId
     );
 
   return (
-    assignedProfile?.full_name ||
+    profile?.full_name ||
     task.assignedTo ||
     "Staff member"
   );
@@ -122,15 +106,21 @@ function getInitials(name = "") {
 
   return words
     .slice(0, 2)
-    .map(word =>
-      word[0].toUpperCase()
-    )
+    .map(word => word[0].toUpperCase())
     .join("");
 }
 
-/* =========================================
-   DATE HELPERS
-========================================= */
+function formatRole(role) {
+  if (role === "owner") {
+    return "Store Owner";
+  }
+
+  if (role === "manager") {
+    return "Manager";
+  }
+
+  return "Staff";
+}
 
 function formatDate(value) {
   if (!value) {
@@ -162,9 +152,7 @@ function formatDateTime(value) {
       hour: "numeric",
       minute: "2-digit"
     }
-  ).format(
-    new Date(value)
-  );
+  ).format(new Date(value));
 }
 
 function getLocalDateKey(date) {
@@ -185,16 +173,16 @@ function getLocalDateKey(date) {
 }
 
 function setGreeting() {
-  const currentHour =
+  const hour =
     new Date().getHours();
 
   let greeting =
     "Good evening";
 
-  if (currentHour < 12) {
+  if (hour < 12) {
     greeting =
       "Good morning";
-  } else if (currentHour < 17) {
+  } else if (hour < 17) {
     greeting =
       "Good afternoon";
   }
@@ -222,10 +210,6 @@ function setGreeting() {
       .toUpperCase();
 }
 
-/* =========================================
-   USERNAME LOGIN
-========================================= */
-
 async function signIn(event) {
   event.preventDefault();
 
@@ -251,15 +235,11 @@ async function signIn(event) {
   const usernamePattern =
     /^[a-z0-9._-]+$/;
 
-  if (
-    !usernamePattern.test(username)
-  ) {
+  if (!usernamePattern.test(username)) {
     loginError.textContent =
       "Username can only contain letters, numbers, dots, dashes and underscores.";
 
-    loginError.classList.remove(
-      "hidden"
-    );
+    loginError.classList.remove("hidden");
 
     return;
   }
@@ -270,8 +250,7 @@ async function signIn(event) {
   loginButton.textContent =
     "Signing In...";
 
-  loginButton.disabled =
-    true;
+  loginButton.disabled = true;
 
   loginButton.classList.add(
     "loading-button"
@@ -304,8 +283,7 @@ async function signIn(event) {
     loginButton.textContent =
       "Sign In";
 
-    loginButton.disabled =
-      false;
+    loginButton.disabled = false;
 
     loginButton.classList.remove(
       "loading-button"
@@ -317,9 +295,7 @@ async function signOut() {
   const logoutButton =
     getElement("logoutButton");
 
-  logoutButton.disabled =
-    true;
-
+  logoutButton.disabled = true;
   logoutButton.textContent =
     "Logging Out...";
 
@@ -327,27 +303,16 @@ async function signOut() {
     await supabaseClient.auth
       .signOut();
 
-  logoutButton.disabled =
-    false;
-
+  logoutButton.disabled = false;
   logoutButton.textContent =
     "Log Out";
 
   if (error) {
-    console.error(
-      "Logout error:",
-      error
-    );
-
     showToast(
       `Could not log out: ${error.message}`
     );
   }
 }
-
-/* =========================================
-   CURRENT PROFILE
-========================================= */
 
 async function loadCurrentProfile() {
   if (!currentUser) {
@@ -369,7 +334,7 @@ async function loadCurrentProfile() {
 
   if (error) {
     console.error(
-      "Current profile loading error:",
+      "Profile loading error:",
       error
     );
 
@@ -409,8 +374,9 @@ function updateUserDisplay() {
 
   getElement("signedInRole")
     .textContent =
-    currentProfile?.role ||
-    "staff";
+    formatRole(
+      currentProfile?.role
+    );
 
   getElement("userAvatar")
     .textContent =
@@ -418,7 +384,7 @@ function updateUserDisplay() {
 
   document
     .querySelectorAll(
-      '[data-view="archive"]'
+      '[data-view="archive"], [data-view="staffOverview"]'
     )
     .forEach(button => {
       button.style.display =
@@ -428,16 +394,15 @@ function updateUserDisplay() {
     });
 
   if (
-    currentView === "archive" &&
+    (
+      currentView === "archive" ||
+      currentView === "staffOverview"
+    ) &&
     !canManageTasks()
   ) {
     switchView("dashboard");
   }
 }
-
-/* =========================================
-   LOAD PROFILES
-========================================= */
 
 async function loadProfiles() {
   const { data, error } =
@@ -446,10 +411,7 @@ async function loadProfiles() {
       .select(
         "id, full_name, role, active"
       )
-      .eq(
-        "active",
-        true
-      )
+      .eq("active", true)
       .order(
         "full_name",
         {
@@ -459,82 +421,58 @@ async function loadProfiles() {
 
   if (error) {
     console.error(
-      "Profile list loading error:",
+      "Profiles loading error:",
       error
     );
 
     profiles = [];
-
     return;
   }
 
-  profiles =
-    data || [];
+  profiles = data || [];
 }
 
 function populateAssigneeDropdown() {
-  const assigneeSelect =
+  const select =
     getElement("taskAssignedTo");
 
-  if (!assigneeSelect) {
+  if (!select) {
     return;
   }
 
-  const existingValue =
-    assigneeSelect.value;
+  const oldValue =
+    select.value;
 
-  const profileOptions =
+  const options =
     profiles
       .map(profile => {
-        let roleLabel =
-          "Staff";
-
-        if (
-          profile.role === "owner"
-        ) {
-          roleLabel =
-            "Owner";
-        } else if (
-          profile.role === "manager"
-        ) {
-          roleLabel =
-            "Manager";
-        }
-
         return `
           <option value="${escapeHtml(profile.id)}">
-            ${escapeHtml(profile.full_name)} — ${roleLabel}
+            ${escapeHtml(profile.full_name)} — ${escapeHtml(formatRole(profile.role))}
           </option>
         `;
       })
       .join("");
 
-  assigneeSelect.innerHTML = `
+  select.innerHTML = `
     <option value="">
       Anyone
     </option>
 
-    ${profileOptions}
+    ${options}
   `;
 
-  if (
+  const stillExists =
     profiles.some(
       profile =>
-        profile.id ===
-        existingValue
-    )
-  ) {
-    assigneeSelect.value =
-      existingValue;
-  } else {
-    assigneeSelect.value =
-      "";
-  }
-}
+        profile.id === oldValue
+    );
 
-/* =========================================
-   LOAD TASKS
-========================================= */
+  select.value =
+    stillExists
+      ? oldValue
+      : "";
+}
 
 async function loadTasks() {
   const { data, error } =
@@ -609,9 +547,69 @@ async function loadTasks() {
   renderWebsite();
 }
 
-/* =========================================
-   TASK CARD
-========================================= */
+function sortTasks(taskList) {
+  const priorityOrder = {
+    high: 0,
+    medium: 1,
+    low: 2
+  };
+
+  return [...taskList].sort(
+    (
+      firstTask,
+      secondTask
+    ) => {
+      if (
+        firstTask.status !==
+        secondTask.status
+      ) {
+        return firstTask.status === "todo"
+          ? -1
+          : 1;
+      }
+
+      const firstPriority =
+        priorityOrder[
+          firstTask.priority
+        ] ?? 3;
+
+      const secondPriority =
+        priorityOrder[
+          secondTask.priority
+        ] ?? 3;
+
+      if (
+        firstPriority !==
+        secondPriority
+      ) {
+        return (
+          firstPriority -
+          secondPriority
+        );
+      }
+
+      if (
+        firstTask.dueDate &&
+        secondTask.dueDate
+      ) {
+        return firstTask.dueDate
+          .localeCompare(
+            secondTask.dueDate
+          );
+      }
+
+      if (firstTask.dueDate) {
+        return -1;
+      }
+
+      if (secondTask.dueDate) {
+        return 1;
+      }
+
+      return 0;
+    }
+  );
+}
 
 function createTaskCard(task) {
   const createdByName =
@@ -627,9 +625,21 @@ function createTaskCard(task) {
   const assignedToName =
     getAssignedProfileName(task);
 
-  const completeButton =
+  const assignedToSomeoneElse =
+    task.assignedToUserId &&
+    task.assignedToUserId !==
+      currentUser?.id;
+
+  const canComplete =
     task.status === "todo" &&
-    !task.archived
+    !task.archived &&
+    (
+      canManageTasks() ||
+      !assignedToSomeoneElse
+    );
+
+  const completeButton =
+    canComplete
       ? `
         <button
           class="success-button"
@@ -667,7 +677,7 @@ function createTaskCard(task) {
       `
       : "";
 
-  const archivedButtons =
+  const archiveControls =
     canManageTasks() &&
     task.archived
       ? `
@@ -782,7 +792,7 @@ function createTaskCard(task) {
         ${completeButton}
         ${reopenButton}
         ${archiveButton}
-        ${archivedButtons}
+        ${archiveControls}
 
       </div>
 
@@ -823,80 +833,6 @@ function renderTaskList(
       .join("");
 }
 
-/* =========================================
-   TASK SORTING
-========================================= */
-
-function sortTasks(taskList) {
-  const priorityOrder = {
-    high: 0,
-    medium: 1,
-    low: 2
-  };
-
-  return [...taskList].sort(
-    (
-      firstTask,
-      secondTask
-    ) => {
-      if (
-        firstTask.status !==
-        secondTask.status
-      ) {
-        return (
-          firstTask.status === "todo"
-            ? -1
-            : 1
-        );
-      }
-
-      const firstPriority =
-        priorityOrder[
-          firstTask.priority
-        ] ?? 3;
-
-      const secondPriority =
-        priorityOrder[
-          secondTask.priority
-        ] ?? 3;
-
-      if (
-        firstPriority !==
-        secondPriority
-      ) {
-        return (
-          firstPriority -
-          secondPriority
-        );
-      }
-
-      if (
-        firstTask.dueDate &&
-        secondTask.dueDate
-      ) {
-        return firstTask.dueDate
-          .localeCompare(
-            secondTask.dueDate
-          );
-      }
-
-      if (firstTask.dueDate) {
-        return -1;
-      }
-
-      if (secondTask.dueDate) {
-        return 1;
-      }
-
-      return 0;
-    }
-  );
-}
-
-/* =========================================
-   MY TASKS
-========================================= */
-
 function renderMyTasks() {
   if (!currentUser) {
     renderTaskList(
@@ -913,16 +849,10 @@ function renderMyTasks() {
         return false;
       }
 
-      const assignedToEveryone =
-        !task.assignedToUserId;
-
-      const assignedToCurrentUser =
-        task.assignedToUserId ===
-        currentUser.id;
-
       return (
-        assignedToEveryone ||
-        assignedToCurrentUser
+        !task.assignedToUserId ||
+        task.assignedToUserId ===
+          currentUser.id
       );
     });
 
@@ -932,15 +862,11 @@ function renderMyTasks() {
   );
 }
 
-/* =========================================
-   WEEKLY PLANNER
-========================================= */
-
 function renderWeeklyPlanner() {
-  const weekBoard =
+  const board =
     getElement("weekBoard");
 
-  if (!weekBoard) {
+  if (!board) {
     return;
   }
 
@@ -972,7 +898,7 @@ function renderWeeklyPlanner() {
     today.getDay()
   );
 
-  weekBoard.innerHTML =
+  board.innerHTML =
     days
       .map(
         (
@@ -996,16 +922,13 @@ function renderWeeklyPlanner() {
             tasks.filter(task => {
               return (
                 !task.archived &&
-                task.dueDate ===
-                  dateKey
+                task.dueDate === dateKey
               );
             });
 
           const taskHtml =
             dayTasks.length
-              ? sortTasks(
-                  dayTasks
-                )
+              ? sortTasks(dayTasks)
                   .map(task => {
                     return `
                       <div
@@ -1073,26 +996,18 @@ function renderWeeklyPlanner() {
       .join("");
 }
 
-/* =========================================
-   FILTERED TASKS
-========================================= */
-
 function renderFilteredTasks() {
   const searchInput =
     getElement("searchInput");
 
   const departmentFilter =
-    getElement(
-      "departmentFilter"
-    );
+    getElement("departmentFilter");
 
   const statusFilter =
     getElement("statusFilter");
 
   const priorityFilter =
-    getElement(
-      "priorityFilter"
-    );
+    getElement("priorityFilter");
 
   if (
     !searchInput ||
@@ -1134,31 +1049,23 @@ function renderFilteredTasks() {
         ${getProfileName(task.completedBy)}
       `.toLowerCase();
 
-      const matchesSearch =
-        !search ||
-        searchableText.includes(
-          search
-        );
-
-      const matchesDepartment =
-        department === "all" ||
-        task.department ===
-          department;
-
-      const matchesStatus =
-        status === "all" ||
-        task.status === status;
-
-      const matchesPriority =
-        priority === "all" ||
-        task.priority ===
-          priority;
-
       return (
-        matchesSearch &&
-        matchesDepartment &&
-        matchesStatus &&
-        matchesPriority
+        (
+          !search ||
+          searchableText.includes(search)
+        ) &&
+        (
+          department === "all" ||
+          task.department === department
+        ) &&
+        (
+          status === "all" ||
+          task.status === status
+        ) &&
+        (
+          priority === "all" ||
+          task.priority === priority
+        )
       );
     });
 
@@ -1168,9 +1075,296 @@ function renderFilteredTasks() {
   );
 }
 
-/* =========================================
-   RENDER WEBSITE
-========================================= */
+function calculateStaffMetrics(profile) {
+  const assignedTasks =
+    tasks.filter(task => {
+      return (
+        !task.archived &&
+        task.assignedToUserId ===
+          profile.id
+      );
+    });
+
+  const openTasks =
+    assignedTasks.filter(
+      task =>
+        task.status === "todo"
+    );
+
+  const completedTasks =
+    assignedTasks.filter(
+      task =>
+        task.status === "completed"
+    );
+
+  const highPriorityTasks =
+    openTasks.filter(
+      task =>
+        task.priority === "high"
+    );
+
+  const completionRate =
+    assignedTasks.length
+      ? Math.round(
+          (
+            completedTasks.length /
+            assignedTasks.length
+          ) * 100
+        )
+      : 0;
+
+  return {
+    total:
+      assignedTasks.length,
+
+    open:
+      openTasks.length,
+
+    completed:
+      completedTasks.length,
+
+    highPriority:
+      highPriorityTasks.length,
+
+    completionRate
+  };
+}
+
+function renderStaffOverview() {
+  const summary =
+    getElement(
+      "staffOverviewSummary"
+    );
+
+  const grid =
+    getElement(
+      "staffOverviewGrid"
+    );
+
+  if (!summary || !grid) {
+    return;
+  }
+
+  if (!canManageTasks()) {
+    summary.innerHTML = "";
+    grid.innerHTML = "";
+    return;
+  }
+
+  const activeTasks =
+    tasks.filter(
+      task => !task.archived
+    );
+
+  const unassignedTasks =
+    activeTasks.filter(
+      task =>
+        !task.assignedToUserId
+    );
+
+  const openAssignedTasks =
+    activeTasks.filter(task => {
+      return (
+        task.status === "todo" &&
+        task.assignedToUserId
+      );
+    });
+
+  const completedAssignedTasks =
+    activeTasks.filter(task => {
+      return (
+        task.status === "completed" &&
+        task.assignedToUserId
+      );
+    });
+
+  const highPriorityAssignedTasks =
+    openAssignedTasks.filter(
+      task =>
+        task.priority === "high"
+    );
+
+  summary.innerHTML = `
+    <article class="stat-card">
+
+      <div class="stat-icon red">
+        01
+      </div>
+
+      <div>
+
+        <p>
+          Open assigned
+        </p>
+
+        <strong>
+          ${openAssignedTasks.length}
+        </strong>
+
+        <small>
+          Assigned tasks still pending
+        </small>
+
+      </div>
+
+    </article>
+
+    <article class="stat-card">
+
+      <div class="stat-icon green">
+        02
+      </div>
+
+      <div>
+
+        <p>
+          Completed assigned
+        </p>
+
+        <strong>
+          ${completedAssignedTasks.length}
+        </strong>
+
+        <small>
+          Finished assigned tasks
+        </small>
+
+      </div>
+
+    </article>
+
+    <article class="stat-card">
+
+      <div class="stat-icon amber">
+        03
+      </div>
+
+      <div>
+
+        <p>
+          Unassigned tasks
+        </p>
+
+        <strong>
+          ${unassignedTasks.length}
+        </strong>
+
+        <small>
+          Available to everyone
+        </small>
+
+      </div>
+
+    </article>
+
+    <article class="stat-card">
+
+      <div class="stat-icon dark">
+        04
+      </div>
+
+      <div>
+
+        <p>
+          High priority
+        </p>
+
+        <strong>
+          ${highPriorityAssignedTasks.length}
+        </strong>
+
+        <small>
+          Assigned and still open
+        </small>
+
+      </div>
+
+    </article>
+  `;
+
+  if (!profiles.length) {
+    grid.innerHTML = `
+      <div class="empty-state">
+
+        <strong>
+          No staff profiles found
+        </strong>
+
+        Active profiles will appear here.
+
+      </div>
+    `;
+
+    return;
+  }
+
+  const cards =
+    profiles
+      .map(profile => {
+        const metrics =
+          calculateStaffMetrics(
+            profile
+          );
+
+        return `
+          <article class="task-card">
+
+            <div class="task-top">
+
+              <div>
+
+                <h4>
+                  ${escapeHtml(profile.full_name)}
+                </h4>
+
+                <p class="task-description">
+                  ${escapeHtml(formatRole(profile.role))}
+                </p>
+
+              </div>
+
+              <div class="badges">
+
+                <span class="badge">
+                  ${metrics.completionRate}% COMPLETE
+                </span>
+
+                <span class="badge">
+                  ${metrics.total} ASSIGNED
+                </span>
+
+              </div>
+
+            </div>
+
+            <div class="task-meta">
+
+              <span>
+                📋 ${metrics.open} open
+              </span>
+
+              <span>
+                ✅ ${metrics.completed} completed
+              </span>
+
+              <span>
+                ⚠ ${metrics.highPriority} high priority
+              </span>
+
+              <span>
+                📊 ${metrics.completionRate}% completion rate
+              </span>
+
+            </div>
+
+          </article>
+        `;
+      })
+      .join("");
+
+  grid.innerHTML =
+    cards;
+}
 
 function renderWebsite() {
   const activeTasks =
@@ -1215,7 +1409,7 @@ function renderWebsite() {
         task.priority === "high"
     ).length;
 
-  const completionPercentage =
+  const percentage =
     activeTasks.length
       ? Math.round(
           (
@@ -1227,22 +1421,20 @@ function renderWebsite() {
 
   getElement("progressPercent")
     .textContent =
-    `${completionPercentage}%`;
+    `${percentage}%`;
 
   getElement("progressRing")
     .style
     .setProperty(
       "--p",
-      completionPercentage
+      percentage
     );
 
   if (!activeTasks.length) {
     getElement("progressText")
       .textContent =
       "No active tasks yet.";
-  } else if (
-    completionPercentage === 100
-  ) {
+  } else if (percentage === 100) {
     getElement("progressText")
       .textContent =
       "Excellent — every active task is complete.";
@@ -1260,13 +1452,10 @@ function renderWebsite() {
     .textContent =
     completedTasks.length;
 
-  const dashboardTasks =
-    sortTasks(todoTasks)
-      .slice(0, 6);
-
   renderTaskList(
     "dashboardTaskList",
-    dashboardTasks
+    sortTasks(todoTasks)
+      .slice(0, 6)
   );
 
   renderTaskList(
@@ -1282,12 +1471,9 @@ function renderWebsite() {
   renderFilteredTasks();
   renderWeeklyPlanner();
   renderMyTasks();
+  renderStaffOverview();
   updateUserDisplay();
 }
-
-/* =========================================
-   ADD TASK
-========================================= */
 
 async function addTask(event) {
   event.preventDefault();
@@ -1309,30 +1495,25 @@ async function addTask(event) {
       .trim();
 
   const description =
-    getElement(
-      "taskDescription"
-    )
+    getElement("taskDescription")
       .value
       .trim();
 
   const department =
-    getElement(
-      "taskDepartment"
-    ).value;
+    getElement("taskDepartment")
+      .value;
 
   const priority =
-    getElement(
-      "taskPriority"
-    ).value;
+    getElement("taskPriority")
+      .value;
 
   const dueDate =
     getElement("taskDueDate")
       .value || null;
 
   const assignedToUserId =
-    getElement(
-      "taskAssignedTo"
-    ).value || null;
+    getElement("taskAssignedTo")
+      .value || null;
 
   const assignedProfile =
     profiles.find(
@@ -1367,9 +1548,7 @@ async function addTask(event) {
         'button[type="submit"]'
       );
 
-  submitButton.disabled =
-    true;
-
+  submitButton.disabled = true;
   submitButton.textContent =
     "Adding Task...";
 
@@ -1405,9 +1584,7 @@ async function addTask(event) {
           false
       });
 
-  submitButton.disabled =
-    false;
-
+  submitButton.disabled = false;
   submitButton.textContent =
     "Add Task";
 
@@ -1433,10 +1610,6 @@ async function addTask(event) {
   await loadTasks();
 }
 
-/* =========================================
-   COMPLETE TASK
-========================================= */
-
 window.completeTask =
   async function(taskId) {
     if (!currentUser) {
@@ -1457,13 +1630,13 @@ window.completeTask =
       return;
     }
 
-    const assignedToSomeoneElse =
+    const assignedElsewhere =
       task.assignedToUserId &&
       task.assignedToUserId !==
         currentUser.id;
 
     if (
-      assignedToSomeoneElse &&
+      assignedElsewhere &&
       !canManageTasks()
     ) {
       showToast(
@@ -1473,12 +1646,11 @@ window.completeTask =
       return;
     }
 
-    const confirmed =
-      confirm(
+    if (
+      !confirm(
         "Mark this task as completed?"
-      );
-
-    if (!confirmed) {
+      )
+    ) {
       return;
     }
 
@@ -1502,11 +1674,6 @@ window.completeTask =
         );
 
     if (error) {
-      console.error(
-        "Complete task error:",
-        error
-      );
-
       showToast(
         `Could not complete task: ${error.message}`
       );
@@ -1520,10 +1687,6 @@ window.completeTask =
 
     await loadTasks();
   };
-
-/* =========================================
-   REOPEN TASK
-========================================= */
 
 window.reopenTask =
   async function(taskId) {
@@ -1554,11 +1717,6 @@ window.reopenTask =
         );
 
     if (error) {
-      console.error(
-        "Reopen task error:",
-        error
-      );
-
       showToast(
         `Could not reopen task: ${error.message}`
       );
@@ -1573,10 +1731,6 @@ window.reopenTask =
     await loadTasks();
   };
 
-/* =========================================
-   ARCHIVE TASK
-========================================= */
-
 window.archiveTask =
   async function(taskId) {
     if (!canManageTasks()) {
@@ -1587,12 +1741,11 @@ window.archiveTask =
       return;
     }
 
-    const confirmed =
-      confirm(
+    if (
+      !confirm(
         "Archive this task?"
-      );
-
-    if (!confirmed) {
+      )
+    ) {
       return;
     }
 
@@ -1600,8 +1753,7 @@ window.archiveTask =
       await supabaseClient
         .from("tasks")
         .update({
-          archived:
-            true
+          archived: true
         })
         .eq(
           "id",
@@ -1609,11 +1761,6 @@ window.archiveTask =
         );
 
     if (error) {
-      console.error(
-        "Archive task error:",
-        error
-      );
-
       showToast(
         `Could not archive task: ${error.message}`
       );
@@ -1628,10 +1775,6 @@ window.archiveTask =
     await loadTasks();
   };
 
-/* =========================================
-   RESTORE TASK
-========================================= */
-
 window.restoreTask =
   async function(taskId) {
     if (!canManageTasks()) {
@@ -1642,8 +1785,7 @@ window.restoreTask =
       await supabaseClient
         .from("tasks")
         .update({
-          archived:
-            false
+          archived: false
         })
         .eq(
           "id",
@@ -1651,11 +1793,6 @@ window.restoreTask =
         );
 
     if (error) {
-      console.error(
-        "Restore task error:",
-        error
-      );
-
       showToast(
         `Could not restore task: ${error.message}`
       );
@@ -1670,10 +1807,6 @@ window.restoreTask =
     await loadTasks();
   };
 
-/* =========================================
-   DELETE TASK
-========================================= */
-
 window.deleteTask =
   async function(taskId) {
     if (!canManageTasks()) {
@@ -1684,12 +1817,11 @@ window.deleteTask =
       return;
     }
 
-    const confirmed =
-      confirm(
+    if (
+      !confirm(
         "Permanently delete this task? This cannot be undone."
-      );
-
-    if (!confirmed) {
+      )
+    ) {
       return;
     }
 
@@ -1703,11 +1835,6 @@ window.deleteTask =
         );
 
     if (error) {
-      console.error(
-        "Delete task error:",
-        error
-      );
-
       showToast(
         `Could not delete task: ${error.message}`
       );
@@ -1721,10 +1848,6 @@ window.deleteTask =
 
     await loadTasks();
   };
-
-/* =========================================
-   TASK MODAL
-========================================= */
 
 function openTaskModal() {
   showElement("taskModal");
@@ -1748,17 +1871,18 @@ function closeTaskModal() {
     "";
 }
 
-/* =========================================
-   NAVIGATION
-========================================= */
-
 function switchView(viewName) {
+  const protectedViews = [
+    "archive",
+    "staffOverview"
+  ];
+
   if (
-    viewName === "archive" &&
+    protectedViews.includes(viewName) &&
     !canManageTasks()
   ) {
     showToast(
-      "Only managers and owners can access the archive."
+      "Only managers and owners can access this page."
     );
 
     return;
@@ -1783,6 +1907,9 @@ function switchView(viewName) {
     completed:
       "Completed Tasks",
 
+    staffOverview:
+      "Staff Overview",
+
     archive:
       "Archive"
   };
@@ -1796,9 +1923,7 @@ function switchView(viewName) {
     });
 
   document
-    .querySelectorAll(
-      ".nav-link"
-    )
+    .querySelectorAll(".nav-link")
     .forEach(button => {
       button.classList.remove(
         "active"
@@ -1832,10 +1957,6 @@ function switchView(viewName) {
     .remove("show");
 }
 
-/* =========================================
-   REALTIME
-========================================= */
-
 function subscribeToTaskChanges() {
   if (realtimeChannel) {
     supabaseClient
@@ -1852,45 +1973,27 @@ function subscribeToTaskChanges() {
       .on(
         "postgres_changes",
         {
-          event:
-            "*",
-
-          schema:
-            "public",
-
-          table:
-            "tasks"
+          event: "*",
+          schema: "public",
+          table: "tasks"
         },
         async () => {
           await loadTasks();
         }
       )
-      .subscribe(status => {
-        console.log(
-          "Realtime status:",
-          status
-        );
-      });
+      .subscribe();
 }
-
-/* =========================================
-   SHOW APPLICATION
-========================================= */
 
 async function showStoreflowApp(user) {
   if (
     isInitialising &&
-    currentUser?.id ===
-      user.id
+    currentUser?.id === user.id
   ) {
     return;
   }
 
-  isInitialising =
-    true;
-
-  currentUser =
-    user;
+  isInitialising = true;
+  currentUser = user;
 
   try {
     const profileLoaded =
@@ -1910,31 +2013,19 @@ async function showStoreflowApp(user) {
     updateUserDisplay();
     subscribeToTaskChanges();
 
-    hideElement(
-      "loginScreen"
-    );
-
-    showElement(
-      "storeflowApp"
-    );
+    hideElement("loginScreen");
+    showElement("storeflowApp");
   } finally {
-    isInitialising =
-      false;
+    isInitialising = false;
   }
 }
 
 function showLoginScreen() {
-  currentUser =
-    null;
+  currentUser = null;
+  currentProfile = null;
 
-  currentProfile =
-    null;
-
-  tasks =
-    [];
-
-  profiles =
-    [];
+  tasks = [];
+  profiles = [];
 
   currentView =
     "dashboard";
@@ -1945,41 +2036,26 @@ function showLoginScreen() {
         realtimeChannel
       );
 
-    realtimeChannel =
-      null;
+    realtimeChannel = null;
   }
 
-  hideElement(
-    "storeflowApp"
-  );
+  hideElement("storeflowApp");
+  showElement("loginScreen");
 
-  showElement(
-    "loginScreen"
-  );
-
-  const loginForm =
-    getElement("loginForm");
-
-  if (loginForm) {
-    loginForm.reset();
-  }
+  getElement("loginForm")
+    ?.reset();
 
   const loginError =
     getElement("loginError");
 
   if (loginError) {
-    loginError.textContent =
-      "";
+    loginError.textContent = "";
 
     loginError.classList.add(
       "hidden"
     );
   }
 }
-
-/* =========================================
-   TOAST
-========================================= */
 
 function showToast(message) {
   const toast =
@@ -1996,9 +2072,7 @@ function showToast(message) {
     "hidden"
   );
 
-  clearTimeout(
-    toastTimer
-  );
+  clearTimeout(toastTimer);
 
   toastTimer =
     setTimeout(() => {
@@ -2007,10 +2081,6 @@ function showToast(message) {
       );
     }, 3000);
 }
-
-/* =========================================
-   EVENT LISTENERS
-========================================= */
 
 getElement("loginForm")
   ?.addEventListener(
@@ -2025,9 +2095,7 @@ getElement("logoutButton")
   );
 
 document
-  .querySelectorAll(
-    ".nav-link"
-  )
+  .querySelectorAll(".nav-link")
   .forEach(button => {
     button.addEventListener(
       "click",
@@ -2102,9 +2170,7 @@ getElement("searchInput")
     renderFilteredTasks
   );
 
-getElement(
-  "departmentFilter"
-)
+getElement("departmentFilter")
   ?.addEventListener(
     "change",
     renderFilteredTasks
@@ -2116,9 +2182,7 @@ getElement("statusFilter")
     renderFilteredTasks
   );
 
-getElement(
-  "priorityFilter"
-)
+getElement("priorityFilter")
   ?.addEventListener(
     "change",
     renderFilteredTasks
@@ -2132,9 +2196,7 @@ getElement("menuButton")
         .classList
         .toggle("open");
 
-      getElement(
-        "mobileOverlay"
-      )
+      getElement("mobileOverlay")
         .classList
         .toggle("show");
     }
@@ -2148,9 +2210,7 @@ getElement("mobileOverlay")
         .classList
         .remove("open");
 
-      getElement(
-        "mobileOverlay"
-      )
+      getElement("mobileOverlay")
         .classList
         .remove("show");
     }
@@ -2170,21 +2230,12 @@ document.addEventListener(
   }
 );
 
-/* =========================================
-   AUTH STATE
-========================================= */
-
 supabaseClient.auth
   .onAuthStateChange(
     async (
       event,
       session
     ) => {
-      console.log(
-        "Authentication event:",
-        event
-      );
-
       if (session?.user) {
         await showStoreflowApp(
           session.user
@@ -2194,10 +2245,6 @@ supabaseClient.auth
       }
     }
   );
-
-/* =========================================
-   INITIALISE
-========================================= */
 
 async function initialiseStoreflow() {
   const {

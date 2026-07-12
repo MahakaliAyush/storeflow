@@ -237,6 +237,15 @@
         <button
           type="button"
           class="nav-link"
+          data-view="staffOverview"
+        >
+          <span>♙</span>
+          Staff Overview
+        </button>
+
+        <button
+          type="button"
+          class="nav-link"
           data-view="archive"
         >
           <span>□</span>
@@ -260,7 +269,7 @@
         </p>
 
         <small>
-          StoreFlow v3.0
+          StoreFlow v4.0
         </small>
 
       </div>
@@ -842,6 +851,65 @@
 
         </section>
 
+        <!-- STAFF OVERVIEW -->
+
+        <section
+          id="staffOverviewView"
+          class="view"
+        >
+
+          <div class="page-heading">
+
+            <div>
+
+              <p class="section-label">
+                MANAGEMENT REPORT
+              </p>
+
+              <h3>
+                Staff Overview
+              </h3>
+
+              <p>
+                Review assigned work, pending tasks and completion performance.
+              </p>
+
+            </div>
+
+          </div>
+
+          <div
+            class="stats-grid"
+            id="staffOverviewSummary"
+          ></div>
+
+          <div class="panel">
+
+            <div class="panel-header">
+
+              <div>
+
+                <p class="section-label">
+                  TEAM PERFORMANCE
+                </p>
+
+                <h3>
+                  Individual staff results
+                </h3>
+
+              </div>
+
+            </div>
+
+            <div
+              class="task-list"
+              id="staffOverviewGrid"
+            ></div>
+
+          </div>
+
+        </section>
+
         <!-- ARCHIVE -->
 
         <section
@@ -1097,16 +1165,12 @@
 
   </div>
 
-  <!-- TOAST -->
-
   <div
     id="toast"
     class="toast hidden"
     role="status"
     aria-live="polite"
   ></div>
-
-  <!-- SCRIPTS -->
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
