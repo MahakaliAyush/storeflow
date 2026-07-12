@@ -1,185 +1,527 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="StoreFlow internal store task management website" />
-  <title>StoreFlow | Store Operations Hub</title>
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <meta name="theme-color" content="#c8102e">
+
+  <meta
+    name="description"
+    content="Internal operations hub for IGA Express Eight Mile Plains"
+  >
+
+  <title>StoreFlow | IGA Express Eight Mile Plains</title>
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css" />
+
+  <link
+    rel="preconnect"
+    href="https://fonts.gstatic.com"
+    crossorigin
+  >
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet"
+  >
+
+  <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
+
+  <div
+    class="mobile-overlay"
+    id="mobileOverlay"
+  ></div>
+
   <div class="app-shell">
-    <aside class="sidebar" id="sidebar">
+
+    <aside
+      class="sidebar"
+      id="sidebar"
+    >
+
       <div class="brand">
-        <div class="brand-mark">S</div>
+
+        <div class="brand-mark">
+          SF
+        </div>
+
         <div>
           <h1>StoreFlow</h1>
-          <p>Operations Hub</p>
+          <p>Store Operations Hub</p>
         </div>
+
+      </div>
+
+      <div class="store-card">
+
+        <span class="store-dot"></span>
+
+        <div>
+          <strong>IGA Express</strong>
+          <small>Eight Mile Plains</small>
+        </div>
+
       </div>
 
       <nav class="nav">
-        <button class="nav-link active" data-view="dashboard">🏠 <span>Dashboard</span></button>
-        <button class="nav-link" data-view="tasks">✅ <span>All Tasks</span></button>
-        <button class="nav-link" data-view="completed">📋 <span>Completed</span></button>
-        <button class="nav-link" data-view="archive">🗄️ <span>Archive</span></button>
+
+        <button
+          class="nav-link active"
+          data-view="dashboard"
+        >
+          <span>⌂</span>
+          Dashboard
+        </button>
+
+        <button
+          class="nav-link"
+          data-view="planner"
+        >
+          <span>▦</span>
+          Weekly Planner
+        </button>
+
+        <button
+          class="nav-link"
+          data-view="tasks"
+        >
+          <span>✓</span>
+          All Tasks
+        </button>
+
+        <button
+          class="nav-link"
+          data-view="completed"
+        >
+          <span>◉</span>
+          Completed
+        </button>
+
+        <button
+          class="nav-link"
+          data-view="archive"
+        >
+          <span>□</span>
+          Archive
+        </button>
+
       </nav>
 
       <div class="sidebar-footer">
-        <p class="small">Prototype version</p>
-        <p class="small muted">Data is saved only in this browser.</p>
+
+        <span class="status-pill">
+          <i></i>
+          System online
+        </span>
+
+        <p>Internal store platform</p>
+        <small>StoreFlow v1.1</small>
+
       </div>
+
     </aside>
 
     <main class="main">
+
       <header class="topbar">
-        <button class="icon-button mobile-only" id="menuButton" aria-label="Open menu">☰</button>
-        <div>
-          <p class="eyebrow">IGA STORE OPERATIONS</p>
-          <h2 id="pageTitle">Dashboard</h2>
+
+        <div class="topbar-left">
+
+          <button
+            class="icon-button mobile-only"
+            id="menuButton"
+            aria-label="Open menu"
+          >
+            ☰
+          </button>
+
+          <div>
+
+            <p class="eyebrow">
+              IGA EXPRESS EIGHT MILE PLAINS
+            </p>
+
+            <h2 id="pageTitle">
+              Dashboard
+            </h2>
+
+          </div>
+
         </div>
 
         <div class="user-area">
+
           <label class="role-control">
-            <span>Viewing as</span>
+
+            <span>Preview role</span>
+
             <select id="roleSelect">
-              <option value="staff">Staff</option>
-              <option value="manager" selected>Ayush — Manager</option>
-              <option value="owner">Owner</option>
+
+              <option value="staff">
+                Staff
+              </option>
+
+              <option
+                value="manager"
+                selected
+              >
+                Ayush — Manager
+              </option>
+
+              <option value="owner">
+                Owner
+              </option>
+
             </select>
+
           </label>
-          <div class="avatar">AP</div>
+
+          <div class="avatar">
+            AP
+          </div>
+
         </div>
+
       </header>
 
       <section class="content">
-        <div class="notice">
-          <strong>Skeleton mode:</strong> this version demonstrates the website and permissions.
-          Shared staff accounts and live data will be connected in the next stage.
+
+        <div class="prototype-banner">
+
+          <strong>Prototype:</strong>
+
+          Tasks are stored in this browser.
+          Shared live data and secure logins are the next upgrade.
+
         </div>
 
-        <section id="dashboardView" class="view active">
-          <div class="welcome-row">
+        <!-- DASHBOARD -->
+
+        <section
+          id="dashboardView"
+          class="view active"
+        >
+
+          <div class="hero-card">
+
             <div>
-              <h3>Good day, Ayush 👋</h3>
-              <p>Here is the current store task overview.</p>
+
+              <span
+                class="hero-kicker"
+                id="todayDate"
+              ></span>
+
+              <h3 id="greeting">
+                Good day, Ayush
+              </h3>
+
+              <p>
+                Keep the store organised, accountable and ready for customers.
+              </p>
+
             </div>
-            <button class="primary-button open-task-modal">＋ Add New Task</button>
+
+            <div class="hero-actions">
+
+              <button
+                class="secondary-button"
+                data-go-view="planner"
+              >
+                Weekly Planner
+              </button>
+
+              <button class="primary-button open-task-modal">
+                ＋ Add Task
+              </button>
+
+            </div>
+
           </div>
 
           <div class="stats-grid">
-            <article class="stat-card">
-              <span class="stat-icon">📌</span>
-              <div><p>Total Tasks</p><strong id="totalCount">0</strong></div>
-            </article>
-            <article class="stat-card">
-              <span class="stat-icon">⏳</span>
-              <div><p>To Do</p><strong id="todoCount">0</strong></div>
-            </article>
-            <article class="stat-card">
-              <span class="stat-icon">✅</span>
-              <div><p>Completed</p><strong id="completedCount">0</strong></div>
-            </article>
-            <article class="stat-card">
-              <span class="stat-icon">⚠️</span>
-              <div><p>High Priority</p><strong id="highCount">0</strong></div>
-            </article>
-          </div>
 
-          <div class="panel">
-            <div class="panel-header">
-              <div>
-                <h3>Current Tasks</h3>
-                <p>Tasks that still need attention.</p>
+            <article class="stat-card">
+
+              <div class="stat-icon red">
+                01
               </div>
-              <button class="secondary-button" data-go-view="tasks">View All</button>
-            </div>
-            <div id="dashboardTaskList" class="task-list"></div>
-          </div>
-        </section>
 
-        <section id="tasksView" class="view">
-          <div class="page-actions">
-            <div class="filter-row">
-              <input id="searchInput" type="search" placeholder="Search tasks..." />
-              <select id="departmentFilter">
-                <option value="all">All departments</option>
-                <option>Front Counter</option>
-                <option>Grocery</option>
-                <option>Dairy</option>
-                <option>Freezer</option>
-                <option>Produce</option>
-                <option>Cleaning</option>
-                <option>Management</option>
-                <option>Other</option>
-              </select>
-              <select id="statusFilter">
-                <option value="all">All statuses</option>
-                <option value="todo">To Do</option>
-                <option value="completed">Completed</option>
-              </select>
-            </div>
-            <button class="primary-button open-task-modal">＋ Add Task</button>
-          </div>
-          <div id="allTaskList" class="task-list"></div>
-        </section>
-
-        <section id="completedView" class="view">
-          <div class="panel">
-            <div class="panel-header">
               <div>
-                <h3>Completed Tasks</h3>
-                <p>A record of work marked as done.</p>
-              </div>
-            </div>
-            <div id="completedTaskList" class="task-list"></div>
-          </div>
-        </section>
 
-        <section id="archiveView" class="view">
-          <div class="panel">
-            <div class="panel-header">
+                <p>Active tasks</p>
+
+                <strong id="totalCount">
+                  0
+                </strong>
+
+                <small>
+                  Across all departments
+                </small>
+
+              </div>
+
+            </article>
+
+            <article class="stat-card">
+
+              <div class="stat-icon amber">
+                02
+              </div>
+
               <div>
-                <h3>Archived Tasks</h3>
-                <p>Only managers and the owner can archive or restore tasks.</p>
+
+                <p>Still to do</p>
+
+                <strong id="todoCount">
+                  0
+                </strong>
+
+                <small>
+                  Awaiting completion
+                </small>
+
               </div>
-            </div>
-            <div id="archiveTaskList" class="task-list"></div>
+
+            </article>
+
+            <article class="stat-card">
+
+              <div class="stat-icon green">
+                03
+              </div>
+
+              <div>
+
+                <p>Completed</p>
+
+                <strong id="completedCount">
+                  0
+                </strong>
+
+                <small>
+                  Recorded successfully
+                </small>
+
+              </div>
+
+            </article>
+
+            <article class="stat-card">
+
+              <div class="stat-icon dark">
+                04
+              </div>
+
+              <div>
+
+                <p>High priority</p>
+
+                <strong id="highCount">
+                  0
+                </strong>
+
+                <small>
+                  Needs attention
+                </small>
+
+              </div>
+
+            </article>
+
           </div>
+
+          <div class="dashboard-grid">
+
+            <div class="panel">
+
+              <div class="panel-header">
+
+                <div>
+
+                  <p class="section-label">
+                    WORK QUEUE
+                  </p>
+
+                  <h3>
+                    Priority and upcoming tasks
+                  </h3>
+
+                </div>
+
+                <button
+                  class="text-button"
+                  data-go-view="tasks"
+                >
+                  View all →
+                </button>
+
+              </div>
+
+              <div
+                id="dashboardTaskList"
+                class="task-list"
+              ></div>
+
+            </div>
+
+            <aside class="panel progress-panel">
+
+              <div class="panel-header">
+
+                <div>
+
+                  <p class="section-label">
+                    WEEKLY PROGRESS
+                  </p>
+
+                  <h3>
+                    Team completion
+                  </h3>
+
+                </div>
+
+              </div>
+
+              <div class="progress-content">
+
+                <div
+                  class="progress-ring"
+                  id="progressRing"
+                >
+
+                  <span id="progressPercent">
+                    0%
+                  </span>
+
+                </div>
+
+                <p id="progressText">
+                  No tasks completed yet.
+                </p>
+
+                <div class="mini-summary">
+
+                  <span>
+
+                    <b id="summaryTodo">
+                      0
+                    </b>
+
+                    Open
+
+                  </span>
+
+                  <span>
+
+                    <b id="summaryDone">
+                      0
+                    </b>
+
+                    Done
+
+                  </span>
+
+                </div>
+
+              </div>
+
+            </aside>
+
+          </div>
+
         </section>
-      </section>
-    </main>
-  </div>
 
-  <div class="modal-backdrop hidden" id="taskModal">
-    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-      <div class="modal-header">
-        <div>
-          <p class="eyebrow">NEW STORE TASK</p>
-          <h3 id="modalTitle">Add a task</h3>
-        </div>
-        <button class="icon-button" id="closeModal" aria-label="Close">✕</button>
-      </div>
+        <!-- WEEKLY PLANNER -->
 
-      <form id="taskForm">
-        <label>
-          Task title *
-          <input id="taskTitle" required maxlength="100" placeholder="Example: Fill front drinks fridge" />
-        </label>
+        <section
+          id="plannerView"
+          class="view"
+        >
 
-        <label>
-          Instructions
-          <textarea id="taskDescription" rows="4" maxlength="500" placeholder="Add clear instructions for the team"></textarea>
-        </label>
+          <div class="page-heading">
 
-        <div class="form-grid">
-          <label>
-            Department *
-            <select id="taskDepartment" required>
-              <option value="">Choose department</option>
+            <div>
+
+              <p class="section-label">
+                WEEKLY OPERATIONS
+              </p>
+
+              <h3>
+                Weekly Planner
+              </h3>
+
+              <p>
+                See tasks by due day and keep the whole week organised.
+              </p>
+
+            </div>
+
+            <button class="primary-button open-task-modal">
+              ＋ Add Task
+            </button>
+
+          </div>
+
+          <div
+            class="week-board"
+            id="weekBoard"
+          ></div>
+
+        </section>
+
+        <!-- ALL TASKS -->
+
+        <section
+          id="tasksView"
+          class="view"
+        >
+
+          <div class="page-heading">
+
+            <div>
+
+              <p class="section-label">
+                TASK CONTROL
+              </p>
+
+              <h3>
+                All Tasks
+              </h3>
+
+              <p>
+                Search, filter and manage store work.
+              </p>
+
+            </div>
+
+            <button class="primary-button open-task-modal">
+              ＋ Add Task
+            </button>
+
+          </div>
+
+          <div class="filter-bar">
+
+            <input
+              id="searchInput"
+              type="search"
+              placeholder="Search task, staff or creator..."
+            >
+
+            <select id="departmentFilter">
+
+              <option value="all">
+                All departments
+              </option>
+
               <option>Front Counter</option>
               <option>Grocery</option>
               <option>Dairy</option>
@@ -188,44 +530,339 @@
               <option>Cleaning</option>
               <option>Management</option>
               <option>Other</option>
+
             </select>
+
+            <select id="statusFilter">
+
+              <option value="all">
+                All statuses
+              </option>
+
+              <option value="todo">
+                To Do
+              </option>
+
+              <option value="completed">
+                Completed
+              </option>
+
+            </select>
+
+            <select id="priorityFilter">
+
+              <option value="all">
+                All priorities
+              </option>
+
+              <option value="high">
+                High
+              </option>
+
+              <option value="medium">
+                Medium
+              </option>
+
+              <option value="low">
+                Low
+              </option>
+
+            </select>
+
+          </div>
+
+          <div
+            id="allTaskList"
+            class="task-list standalone-list"
+          ></div>
+
+        </section>
+
+        <!-- COMPLETED -->
+
+        <section
+          id="completedView"
+          class="view"
+        >
+
+          <div class="page-heading">
+
+            <div>
+
+              <p class="section-label">
+                COMPLETION RECORD
+              </p>
+
+              <h3>
+                Completed Tasks
+              </h3>
+
+              <p>
+                A clear history of finished store work.
+              </p>
+
+            </div>
+
+          </div>
+
+          <div class="panel">
+
+            <div
+              id="completedTaskList"
+              class="task-list"
+            ></div>
+
+          </div>
+
+        </section>
+
+        <!-- ARCHIVE -->
+
+        <section
+          id="archiveView"
+          class="view"
+        >
+
+          <div class="page-heading">
+
+            <div>
+
+              <p class="section-label">
+                MANAGEMENT CONTROL
+              </p>
+
+              <h3>
+                Archived Tasks
+              </h3>
+
+              <p>
+                Only managers and the owner can restore or permanently delete tasks.
+              </p>
+
+            </div>
+
+          </div>
+
+          <div class="panel">
+
+            <div
+              id="archiveTaskList"
+              class="task-list"
+            ></div>
+
+          </div>
+
+        </section>
+
+      </section>
+
+      <footer class="site-footer">
+
+        <span>
+          StoreFlow — Internal operations platform for IGA Express Eight Mile Plains.
+        </span>
+
+        <span>
+          Not an official national IGA corporate application.
+        </span>
+
+      </footer>
+
+    </main>
+
+  </div>
+
+  <!-- ADD TASK MODAL -->
+
+  <div
+    class="modal-backdrop hidden"
+    id="taskModal"
+  >
+
+    <div
+      class="modal"
+      role="dialog"
+      aria-modal="true"
+    >
+
+      <div class="modal-header">
+
+        <div>
+
+          <p class="section-label">
+            CREATE WORK ITEM
+          </p>
+
+          <h3>
+            Add a new task
+          </h3>
+
+        </div>
+
+        <button
+          class="icon-button"
+          id="closeModal"
+          aria-label="Close modal"
+        >
+          ✕
+        </button>
+
+      </div>
+
+      <form id="taskForm">
+
+        <label>
+
+          Task title *
+
+          <input
+            id="taskTitle"
+            required
+            maxlength="100"
+            placeholder="Example: Fill front drinks fridge"
+          >
+
+        </label>
+
+        <label>
+
+          Instructions
+
+          <textarea
+            id="taskDescription"
+            rows="4"
+            maxlength="500"
+            placeholder="Explain exactly what needs to be done"
+          ></textarea>
+
+        </label>
+
+        <div class="form-grid">
+
+          <label>
+
+            Department *
+
+            <select
+              id="taskDepartment"
+              required
+            >
+
+              <option value="">
+                Choose department
+              </option>
+
+              <option>Front Counter</option>
+              <option>Grocery</option>
+              <option>Dairy</option>
+              <option>Freezer</option>
+              <option>Produce</option>
+              <option>Cleaning</option>
+              <option>Management</option>
+              <option>Other</option>
+
+            </select>
+
           </label>
 
           <label>
+
             Priority *
-            <select id="taskPriority" required>
-              <option value="low">Low</option>
-              <option value="medium" selected>Medium</option>
-              <option value="high">High</option>
+
+            <select
+              id="taskPriority"
+              required
+            >
+
+              <option value="low">
+                Low
+              </option>
+
+              <option
+                value="medium"
+                selected
+              >
+                Medium
+              </option>
+
+              <option value="high">
+                High
+              </option>
+
             </select>
+
           </label>
 
           <label>
+
             Due date
-            <input id="taskDueDate" type="date" />
+
+            <input
+              id="taskDueDate"
+              type="date"
+            >
+
           </label>
 
           <label>
+
             Assigned to
-            <input id="taskAssignedTo" maxlength="60" placeholder="Any staff member" />
+
+            <input
+              id="taskAssignedTo"
+              maxlength="60"
+              placeholder="Any staff member"
+            >
+
           </label>
+
         </div>
 
         <label>
+
           Added by *
-          <input id="taskCreatedBy" required maxlength="60" value="Ayush" />
+
+          <input
+            id="taskCreatedBy"
+            required
+            maxlength="60"
+            value="Ayush"
+          >
+
         </label>
 
         <div class="modal-actions">
-          <button type="button" class="secondary-button" id="cancelModal">Cancel</button>
-          <button type="submit" class="primary-button">Add Task</button>
+
+          <button
+            type="button"
+            class="secondary-button"
+            id="cancelModal"
+          >
+            Cancel
+          </button>
+
+          <button
+            type="submit"
+            class="primary-button"
+          >
+            Add Task
+          </button>
+
         </div>
+
       </form>
+
     </div>
+
   </div>
 
-  <div id="toast" class="toast hidden" role="status"></div>
+  <div
+    id="toast"
+    class="toast hidden"
+    role="status"
+  ></div>
 
   <script src="app.js"></script>
+
 </body>
 </html>
