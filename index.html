@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="StoreFlow internal store task management website" />
+  <title>StoreFlow | Store Operations Hub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="brand-mark">S</div>
+        <div>
+          <h1>StoreFlow</h1>
+          <p>Operations Hub</p>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <button class="nav-link active" data-view="dashboard">🏠 <span>Dashboard</span></button>
+        <button class="nav-link" data-view="tasks">✅ <span>All Tasks</span></button>
+        <button class="nav-link" data-view="completed">📋 <span>Completed</span></button>
+        <button class="nav-link" data-view="archive">🗄️ <span>Archive</span></button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <p class="small">Prototype version</p>
+        <p class="small muted">Data is saved only in this browser.</p>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <button class="icon-button mobile-only" id="menuButton" aria-label="Open menu">☰</button>
+        <div>
+          <p class="eyebrow">IGA STORE OPERATIONS</p>
+          <h2 id="pageTitle">Dashboard</h2>
+        </div>
+
+        <div class="user-area">
+          <label class="role-control">
+            <span>Viewing as</span>
+            <select id="roleSelect">
+              <option value="staff">Staff</option>
+              <option value="manager" selected>Ayush — Manager</option>
+              <option value="owner">Owner</option>
+            </select>
+          </label>
+          <div class="avatar">AP</div>
+        </div>
+      </header>
+
+      <section class="content">
+        <div class="notice">
+          <strong>Skeleton mode:</strong> this version demonstrates the website and permissions.
+          Shared staff accounts and live data will be connected in the next stage.
+        </div>
+
+        <section id="dashboardView" class="view active">
+          <div class="welcome-row">
+            <div>
+              <h3>Good day, Ayush 👋</h3>
+              <p>Here is the current store task overview.</p>
+            </div>
+            <button class="primary-button open-task-modal">＋ Add New Task</button>
+          </div>
+
+          <div class="stats-grid">
+            <article class="stat-card">
+              <span class="stat-icon">📌</span>
+              <div><p>Total Tasks</p><strong id="totalCount">0</strong></div>
+            </article>
+            <article class="stat-card">
+              <span class="stat-icon">⏳</span>
+              <div><p>To Do</p><strong id="todoCount">0</strong></div>
+            </article>
+            <article class="stat-card">
+              <span class="stat-icon">✅</span>
+              <div><p>Completed</p><strong id="completedCount">0</strong></div>
+            </article>
+            <article class="stat-card">
+              <span class="stat-icon">⚠️</span>
+              <div><p>High Priority</p><strong id="highCount">0</strong></div>
+            </article>
+          </div>
+
+          <div class="panel">
+            <div class="panel-header">
+              <div>
+                <h3>Current Tasks</h3>
+                <p>Tasks that still need attention.</p>
+              </div>
+              <button class="secondary-button" data-go-view="tasks">View All</button>
+            </div>
+            <div id="dashboardTaskList" class="task-list"></div>
+          </div>
+        </section>
+
+        <section id="tasksView" class="view">
+          <div class="page-actions">
+            <div class="filter-row">
+              <input id="searchInput" type="search" placeholder="Search tasks..." />
+              <select id="departmentFilter">
+                <option value="all">All departments</option>
+                <option>Front Counter</option>
+                <option>Grocery</option>
+                <option>Dairy</option>
+                <option>Freezer</option>
+                <option>Produce</option>
+                <option>Cleaning</option>
+                <option>Management</option>
+                <option>Other</option>
+              </select>
+              <select id="statusFilter">
+                <option value="all">All statuses</option>
+                <option value="todo">To Do</option>
+                <option value="completed">Completed</option>
+              </select>
+            </div>
+            <button class="primary-button open-task-modal">＋ Add Task</button>
+          </div>
+          <div id="allTaskList" class="task-list"></div>
+        </section>
+
+        <section id="completedView" class="view">
+          <div class="panel">
+            <div class="panel-header">
+              <div>
+                <h3>Completed Tasks</h3>
+                <p>A record of work marked as done.</p>
+              </div>
+            </div>
+            <div id="completedTaskList" class="task-list"></div>
+          </div>
+        </section>
+
+        <section id="archiveView" class="view">
+          <div class="panel">
+            <div class="panel-header">
+              <div>
+                <h3>Archived Tasks</h3>
+                <p>Only managers and the owner can archive or restore tasks.</p>
+              </div>
+            </div>
+            <div id="archiveTaskList" class="task-list"></div>
+          </div>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal-backdrop hidden" id="taskModal">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal-header">
+        <div>
+          <p class="eyebrow">NEW STORE TASK</p>
+          <h3 id="modalTitle">Add a task</h3>
+        </div>
+        <button class="icon-button" id="closeModal" aria-label="Close">✕</button>
+      </div>
+
+      <form id="taskForm">
+        <label>
+          Task title *
+          <input id="taskTitle" required maxlength="100" placeholder="Example: Fill front drinks fridge" />
+        </label>
+
+        <label>
+          Instructions
+          <textarea id="taskDescription" rows="4" maxlength="500" placeholder="Add clear instructions for the team"></textarea>
+        </label>
+
+        <div class="form-grid">
+          <label>
+            Department *
+            <select id="taskDepartment" required>
+              <option value="">Choose department</option>
+              <option>Front Counter</option>
+              <option>Grocery</option>
+              <option>Dairy</option>
+              <option>Freezer</option>
+              <option>Produce</option>
+              <option>Cleaning</option>
+              <option>Management</option>
+              <option>Other</option>
+            </select>
+          </label>
+
+          <label>
+            Priority *
+            <select id="taskPriority" required>
+              <option value="low">Low</option>
+              <option value="medium" selected>Medium</option>
+              <option value="high">High</option>
+            </select>
+          </label>
+
+          <label>
+            Due date
+            <input id="taskDueDate" type="date" />
+          </label>
+
+          <label>
+            Assigned to
+            <input id="taskAssignedTo" maxlength="60" placeholder="Any staff member" />
+          </label>
+        </div>
+
+        <label>
+          Added by *
+          <input id="taskCreatedBy" required maxlength="60" value="Ayush" />
+        </label>
+
+        <div class="modal-actions">
+          <button type="button" class="secondary-button" id="cancelModal">Cancel</button>
+          <button type="submit" class="primary-button">Add Task</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="toast" class="toast hidden" role="status"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
