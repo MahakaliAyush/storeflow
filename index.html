@@ -1,5 +1,7 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
 
@@ -75,14 +77,17 @@
 
         <label>
 
-          Email address
+          Username
 
           <input
-            id="loginEmail"
-            type="email"
-            autocomplete="email"
+            id="loginUsername"
+            type="text"
+            autocomplete="username"
             required
-            placeholder="name@example.com"
+            minlength="2"
+            maxlength="30"
+            pattern="[A-Za-z0-9._-]+"
+            placeholder="Enter your username"
           >
 
         </label>
@@ -96,6 +101,7 @@
             type="password"
             autocomplete="current-password"
             required
+            minlength="6"
             placeholder="Enter your password"
           >
 
@@ -114,6 +120,7 @@
       <p
         class="login-error hidden"
         id="loginError"
+        role="alert"
       ></p>
 
       <small>
@@ -137,6 +144,8 @@
     class="app-shell hidden"
     id="storeflowApp"
   >
+
+    <!-- SIDEBAR -->
 
     <aside
       class="sidebar"
@@ -184,6 +193,7 @@
       <nav class="nav">
 
         <button
+          type="button"
           class="nav-link active"
           data-view="dashboard"
         >
@@ -192,6 +202,7 @@
         </button>
 
         <button
+          type="button"
           class="nav-link"
           data-view="planner"
         >
@@ -200,6 +211,7 @@
         </button>
 
         <button
+          type="button"
           class="nav-link"
           data-view="tasks"
         >
@@ -208,6 +220,7 @@
         </button>
 
         <button
+          type="button"
           class="nav-link"
           data-view="completed"
         >
@@ -216,6 +229,7 @@
         </button>
 
         <button
+          type="button"
           class="nav-link"
           data-view="archive"
         >
@@ -247,16 +261,21 @@
 
     </aside>
 
+    <!-- MAIN APPLICATION -->
+
     <main class="main">
+
+      <!-- TOP BAR -->
 
       <header class="topbar">
 
         <div class="topbar-left">
 
           <button
+            type="button"
             class="icon-button mobile-only"
             id="menuButton"
-            aria-label="Open menu"
+            aria-label="Open navigation menu"
           >
             ☰
           </button>
@@ -290,6 +309,7 @@
           </div>
 
           <button
+            type="button"
             class="secondary-button logout-button"
             id="logoutButton"
           >
@@ -299,6 +319,7 @@
           <div
             class="avatar"
             id="userAvatar"
+            aria-label="Signed-in user initials"
           >
             SF
           </div>
@@ -307,9 +328,11 @@
 
       </header>
 
+      <!-- PAGE CONTENT -->
+
       <section class="content">
 
-        <!-- DASHBOARD -->
+        <!-- DASHBOARD VIEW -->
 
         <section
           id="dashboardView"
@@ -338,6 +361,7 @@
             <div class="hero-actions">
 
               <button
+                type="button"
                 class="secondary-button"
                 data-go-view="planner"
               >
@@ -345,6 +369,7 @@
               </button>
 
               <button
+                type="button"
                 class="primary-button open-task-modal"
               >
                 ＋ Add Task
@@ -353,6 +378,8 @@
             </div>
 
           </div>
+
+          <!-- STATISTICS -->
 
           <div class="stats-grid">
 
@@ -454,6 +481,8 @@
 
           </div>
 
+          <!-- DASHBOARD TASKS AND PROGRESS -->
+
           <div class="dashboard-grid">
 
             <div class="panel">
@@ -473,6 +502,7 @@
                 </div>
 
                 <button
+                  type="button"
                   class="text-button"
                   data-go-view="tasks"
                 >
@@ -520,7 +550,7 @@
                 </div>
 
                 <p id="progressText">
-                  No tasks completed yet.
+                  No active tasks yet.
                 </p>
 
                 <div class="mini-summary">
@@ -555,7 +585,7 @@
 
         </section>
 
-        <!-- WEEKLY PLANNER -->
+        <!-- WEEKLY PLANNER VIEW -->
 
         <section
           id="plannerView"
@@ -581,6 +611,7 @@
             </div>
 
             <button
+              type="button"
               class="primary-button open-task-modal"
             >
               ＋ Add Task
@@ -595,7 +626,7 @@
 
         </section>
 
-        <!-- ALL TASKS -->
+        <!-- ALL TASKS VIEW -->
 
         <section
           id="tasksView"
@@ -621,6 +652,7 @@
             </div>
 
             <button
+              type="button"
               class="primary-button open-task-modal"
             >
               ＋ Add Task
@@ -634,26 +666,56 @@
               id="searchInput"
               type="search"
               placeholder="Search task, staff or creator..."
+              aria-label="Search tasks"
             >
 
-            <select id="departmentFilter">
+            <select
+              id="departmentFilter"
+              aria-label="Filter by department"
+            >
 
               <option value="all">
                 All departments
               </option>
 
-              <option>Front Counter</option>
-              <option>Grocery</option>
-              <option>Dairy</option>
-              <option>Freezer</option>
-              <option>Produce</option>
-              <option>Cleaning</option>
-              <option>Management</option>
-              <option>Other</option>
+              <option value="Front Counter">
+                Front Counter
+              </option>
+
+              <option value="Grocery">
+                Grocery
+              </option>
+
+              <option value="Dairy">
+                Dairy
+              </option>
+
+              <option value="Freezer">
+                Freezer
+              </option>
+
+              <option value="Produce">
+                Produce
+              </option>
+
+              <option value="Cleaning">
+                Cleaning
+              </option>
+
+              <option value="Management">
+                Management
+              </option>
+
+              <option value="Other">
+                Other
+              </option>
 
             </select>
 
-            <select id="statusFilter">
+            <select
+              id="statusFilter"
+              aria-label="Filter by task status"
+            >
 
               <option value="all">
                 All statuses
@@ -669,7 +731,10 @@
 
             </select>
 
-            <select id="priorityFilter">
+            <select
+              id="priorityFilter"
+              aria-label="Filter by priority"
+            >
 
               <option value="all">
                 All priorities
@@ -698,7 +763,7 @@
 
         </section>
 
-        <!-- COMPLETED -->
+        <!-- COMPLETED TASKS VIEW -->
 
         <section
           id="completedView"
@@ -736,7 +801,7 @@
 
         </section>
 
-        <!-- ARCHIVE -->
+        <!-- ARCHIVE VIEW -->
 
         <section
           id="archiveView"
@@ -756,7 +821,7 @@
               </h3>
 
               <p>
-                Only managers and the owner can restore or permanently delete tasks.
+                Only managers and the store owner can restore or permanently delete tasks.
               </p>
 
             </div>
@@ -775,6 +840,8 @@
         </section>
 
       </section>
+
+      <!-- FOOTER -->
 
       <footer class="site-footer">
 
@@ -803,6 +870,7 @@
       class="modal"
       role="dialog"
       aria-modal="true"
+      aria-labelledby="taskModalTitle"
     >
 
       <div class="modal-header">
@@ -813,16 +881,17 @@
             CREATE WORK ITEM
           </p>
 
-          <h3>
+          <h3 id="taskModalTitle">
             Add a new task
           </h3>
 
         </div>
 
         <button
+          type="button"
           class="icon-button"
           id="closeModal"
-          aria-label="Close modal"
+          aria-label="Close task form"
         >
           ✕
         </button>
@@ -837,6 +906,7 @@
 
           <input
             id="taskTitle"
+            type="text"
             required
             maxlength="100"
             placeholder="Example: Fill front drinks fridge"
@@ -872,14 +942,37 @@
                 Choose department
               </option>
 
-              <option>Front Counter</option>
-              <option>Grocery</option>
-              <option>Dairy</option>
-              <option>Freezer</option>
-              <option>Produce</option>
-              <option>Cleaning</option>
-              <option>Management</option>
-              <option>Other</option>
+              <option value="Front Counter">
+                Front Counter
+              </option>
+
+              <option value="Grocery">
+                Grocery
+              </option>
+
+              <option value="Dairy">
+                Dairy
+              </option>
+
+              <option value="Freezer">
+                Freezer
+              </option>
+
+              <option value="Produce">
+                Produce
+              </option>
+
+              <option value="Cleaning">
+                Cleaning
+              </option>
+
+              <option value="Management">
+                Management
+              </option>
+
+              <option value="Other">
+                Other
+              </option>
 
             </select>
 
@@ -930,6 +1023,7 @@
 
             <input
               id="taskAssignedTo"
+              type="text"
               maxlength="60"
               placeholder="Any staff member"
             >
@@ -963,11 +1057,16 @@
 
   </div>
 
+  <!-- TOAST -->
+
   <div
     id="toast"
     class="toast hidden"
     role="status"
+    aria-live="polite"
   ></div>
+
+  <!-- SCRIPTS -->
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
@@ -976,4 +1075,6 @@
   <script src="app.js"></script>
 
 </body>
+
 </html>
+```
