@@ -274,7 +274,7 @@
         </p>
 
         <small>
-          StoreFlow v6.0
+          StoreFlow v7.0
         </small>
 
       </div>
@@ -348,7 +348,7 @@
 
       <section class="content">
 
-        <!-- DASHBOARD VIEW -->
+        <!-- DASHBOARD -->
 
         <section
           id="dashboardView"
@@ -565,7 +565,7 @@
 
         </section>
 
-        <!-- MY TASKS VIEW -->
+        <!-- MY TASKS -->
 
         <section
           id="myTasksView"
@@ -608,7 +608,7 @@
 
         </section>
 
-        <!-- WEEKLY PLANNER VIEW -->
+        <!-- WEEKLY PLANNER -->
 
         <section
           id="plannerView"
@@ -647,7 +647,7 @@
 
         </section>
 
-        <!-- ALL TASKS VIEW -->
+        <!-- ALL TASKS -->
 
         <section
           id="tasksView"
@@ -776,7 +776,7 @@
 
         </section>
 
-        <!-- COMPLETED VIEW -->
+        <!-- COMPLETED -->
 
         <section
           id="completedView"
@@ -812,7 +812,7 @@
 
         </section>
 
-        <!-- STAFF OVERVIEW VIEW -->
+        <!-- STAFF OVERVIEW -->
 
         <section
           id="staffOverviewView"
@@ -867,7 +867,7 @@
 
         </section>
 
-        <!-- RECURRING TASKS VIEW -->
+        <!-- RECURRING TASKS -->
 
         <section
           id="recurringTasksView"
@@ -929,7 +929,7 @@
 
         </section>
 
-        <!-- ACTIVITY LOG VIEW -->
+        <!-- ACTIVITY LOG -->
 
         <section
           id="activityLogView"
@@ -948,7 +948,7 @@
               </h3>
 
               <p>
-                Review task and recurring-schedule activity.
+                Review task, recurring-schedule and photo-evidence activity.
               </p>
             </div>
 
@@ -1000,6 +1000,10 @@
                 Deleted
               </option>
 
+              <option value="photo_uploaded">
+                Photo uploaded
+              </option>
+
               <option value="recurring">
                 All recurring activity
               </option>
@@ -1048,7 +1052,7 @@
 
         </section>
 
-        <!-- ARCHIVE VIEW -->
+        <!-- ARCHIVE -->
 
         <section
           id="archiveView"
@@ -1281,6 +1285,24 @@
           </label>
 
           <label
+            id="taskPhotoRequiredLabel"
+          >
+            Photo evidence
+
+            <select id="taskPhotoRequired">
+
+              <option value="false">
+                Not required
+              </option>
+
+              <option value="true">
+                Required before completion
+              </option>
+
+            </select>
+          </label>
+
+          <label
             id="repeatHelpLabel"
             class="hidden"
           >
@@ -1293,6 +1315,18 @@
               value="Choose the first due date"
             >
           </label>
+
+        </div>
+
+        <div class="photo-requirement-note">
+
+          <strong>
+            Photo evidence
+          </strong>
+
+          <span>
+            When required, the assigned staff member must upload a photo before the task can be completed.
+          </span>
 
         </div>
 
@@ -1316,6 +1350,205 @@
         </div>
 
       </form>
+
+    </div>
+
+  </div>
+
+  <!-- PHOTO EVIDENCE UPLOAD MODAL -->
+
+  <div
+    class="modal-backdrop hidden"
+    id="evidenceModal"
+  >
+
+    <div
+      class="modal evidence-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="evidenceModalTitle"
+    >
+
+      <div class="modal-header">
+
+        <div>
+          <p class="section-label">
+            TASK VERIFICATION
+          </p>
+
+          <h3 id="evidenceModalTitle">
+            Upload Photo Evidence
+          </h3>
+        </div>
+
+        <button
+          type="button"
+          class="icon-button"
+          id="closeEvidenceModal"
+          aria-label="Close photo evidence form"
+        >
+          ✕
+        </button>
+
+      </div>
+
+      <div class="evidence-modal-content">
+
+        <div class="evidence-task-summary">
+
+          <span class="evidence-task-label">
+            TASK
+          </span>
+
+          <strong id="evidenceTaskTitle">
+            Task
+          </strong>
+
+          <p id="evidenceStatusText">
+            Select a clear photo showing the completed work.
+          </p>
+
+        </div>
+
+        <label
+          class="evidence-file-picker"
+          for="evidenceFile"
+        >
+
+          <span class="evidence-upload-icon">
+            📷
+          </span>
+
+          <strong>
+            Choose a photo
+          </strong>
+
+          <small>
+            JPG, PNG or WebP — maximum 5 MB
+          </small>
+
+          <input
+            id="evidenceFile"
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+          >
+
+        </label>
+
+        <div
+          class="evidence-preview hidden"
+          id="evidencePreviewContainer"
+        >
+
+          <img
+            id="evidencePreview"
+            alt="Selected task evidence preview"
+          >
+
+          <div class="evidence-preview-details">
+
+            <strong id="evidencePreviewName">
+              Selected photo
+            </strong>
+
+            <small id="evidencePreviewSize">
+              0 MB
+            </small>
+
+          </div>
+
+        </div>
+
+        <p
+          class="evidence-error hidden"
+          id="evidenceError"
+          role="alert"
+        ></p>
+
+        <div class="modal-actions">
+
+          <button
+            type="button"
+            class="secondary-button"
+            id="cancelEvidenceModal"
+          >
+            Cancel
+          </button>
+
+          <button
+            type="button"
+            class="primary-button"
+            id="uploadEvidenceButton"
+          >
+            Upload Evidence
+          </button>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- PHOTO VIEWER MODAL -->
+
+  <div
+    class="modal-backdrop hidden"
+    id="evidenceViewerModal"
+  >
+
+    <div
+      class="modal evidence-viewer-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="evidenceViewerTitle"
+    >
+
+      <div class="modal-header">
+
+        <div>
+          <p class="section-label">
+            TASK EVIDENCE
+          </p>
+
+          <h3 id="evidenceViewerTitle">
+            Photo Evidence
+          </h3>
+        </div>
+
+        <button
+          type="button"
+          class="icon-button"
+          id="closeEvidenceViewer"
+          aria-label="Close photo viewer"
+        >
+          ✕
+        </button>
+
+      </div>
+
+      <div class="evidence-viewer-content">
+
+        <div
+          class="evidence-viewer-loading"
+          id="evidenceViewerLoading"
+        >
+          Loading secure photo...
+        </div>
+
+        <img
+          id="evidenceViewerImage"
+          class="hidden"
+          alt="Task photo evidence"
+        >
+
+        <div
+          class="evidence-viewer-details"
+          id="evidenceViewerDetails"
+        ></div>
+
+      </div>
 
     </div>
 
