@@ -47,12 +47,13 @@
 
 <body>
 
-  <!-- LOGIN -->
+  <!-- LOGIN SCREEN -->
 
   <section
     class="login-screen"
     id="loginScreen"
   >
+
     <div class="login-card">
 
       <div class="login-logo">
@@ -122,6 +123,7 @@
       </small>
 
     </div>
+
   </section>
 
   <!-- MOBILE OVERLAY -->
@@ -137,8 +139,6 @@
     class="app-shell hidden"
     id="storeflowApp"
   >
-
-    <!-- SIDEBAR -->
 
     <aside
       class="sidebar"
@@ -274,18 +274,16 @@
         </p>
 
         <small>
-          StoreFlow v7.0
+          StoreFlow v7.1
         </small>
 
       </div>
 
     </aside>
 
-    <!-- MAIN -->
-
     <main class="main">
 
-      <!-- TOPBAR -->
+      <!-- TOP BAR -->
 
       <header class="topbar">
 
@@ -731,7 +729,7 @@
 
             <select
               id="statusFilter"
-              aria-label="Filter by status"
+              aria-label="Filter by task status"
             >
               <option value="all">
                 All statuses
@@ -901,7 +899,7 @@
 
           <div
             class="stats-grid"
-            id="recurringTasksSummary"
+            id="recurringSummary"
           ></div>
 
           <div class="panel">
@@ -922,7 +920,7 @@
 
             <div
               class="task-list"
-              id="recurringTasksList"
+              id="recurringTaskList"
             ></div>
 
           </div>
@@ -948,7 +946,7 @@
               </h3>
 
               <p>
-                Review task, recurring-schedule and photo-evidence activity.
+                Review task, recurring-schedule and before/after photo-evidence activity.
               </p>
             </div>
 
@@ -1002,10 +1000,6 @@
 
               <option value="photo_uploaded">
                 Photo uploaded
-              </option>
-
-              <option value="recurring">
-                All recurring activity
               </option>
 
               <option value="recurring_created">
@@ -1089,8 +1083,6 @@
         </section>
 
       </section>
-
-      <!-- FOOTER -->
 
       <footer class="site-footer">
 
@@ -1264,7 +1256,6 @@
             Repeat
 
             <select id="taskRepeat">
-
               <option value="none">
                 Does not repeat
               </option>
@@ -1280,25 +1271,26 @@
               <option value="monthly">
                 Monthly
               </option>
-
             </select>
           </label>
 
-          <label
-            id="taskPhotoRequiredLabel"
-          >
+
+
+          <label id="taskPhotoModeLabel">
             Photo evidence
 
-            <select id="taskPhotoRequired">
-
-              <option value="false">
-                Not required
+            <select id="taskPhotoMode">
+              <option value="none">
+                No photo required
               </option>
 
-              <option value="true">
-                Required before completion
+              <option value="after">
+                After photo only
               </option>
 
+              <option value="before_after">
+                Before and after photos
+              </option>
             </select>
           </label>
 
@@ -1312,22 +1304,15 @@
               id="repeatHelp"
               type="text"
               readonly
-              value="Choose the first due date"
+              value="Choose a due date first"
             >
           </label>
 
         </div>
 
         <div class="photo-requirement-note">
-
-          <strong>
-            Photo evidence
-          </strong>
-
-          <span>
-            When required, the assigned staff member must upload a photo before the task can be completed.
-          </span>
-
+          <strong>Photo evidence</strong>
+          <span>Choose whether this task needs no photo, an after photo, or both before and after photos.</span>
         </div>
 
         <div class="modal-actions">
@@ -1355,206 +1340,70 @@
 
   </div>
 
+
+
   <!-- PHOTO EVIDENCE UPLOAD MODAL -->
-
-  <div
-    class="modal-backdrop hidden"
-    id="evidenceModal"
-  >
-
-    <div
-      class="modal evidence-modal"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="evidenceModalTitle"
-    >
-
+  <div class="modal-backdrop hidden" id="evidenceModal">
+    <div class="modal evidence-modal" role="dialog" aria-modal="true" aria-labelledby="evidenceModalTitle">
       <div class="modal-header">
-
         <div>
-          <p class="section-label">
-            TASK VERIFICATION
-          </p>
-
-          <h3 id="evidenceModalTitle">
-            Upload Photo Evidence
-          </h3>
+          <p class="section-label">TASK VERIFICATION</p>
+          <h3 id="evidenceModalTitle">Upload Photo Evidence</h3>
         </div>
-
-        <button
-          type="button"
-          class="icon-button"
-          id="closeEvidenceModal"
-          aria-label="Close photo evidence form"
-        >
-          ✕
-        </button>
-
+        <button type="button" class="icon-button" id="closeEvidenceModal" aria-label="Close photo evidence form">✕</button>
       </div>
 
       <div class="evidence-modal-content">
-
         <div class="evidence-task-summary">
-
-          <span class="evidence-task-label">
-            TASK
-          </span>
-
-          <strong id="evidenceTaskTitle">
-            Task
-          </strong>
-
-          <p id="evidenceStatusText">
-            Select a clear photo showing the completed work.
-          </p>
-
+          <span class="evidence-task-label">TASK</span>
+          <strong id="evidenceTaskTitle">Task</strong>
+          <p id="evidenceStatusText">Select a clear photo.</p>
         </div>
 
-        <label
-          class="evidence-file-picker"
-          for="evidenceFile"
-        >
-
-          <span class="evidence-upload-icon">
-            📷
-          </span>
-
-          <strong>
-            Choose a photo
-          </strong>
-
-          <small>
-            JPG, PNG or WebP — maximum 5 MB
-          </small>
-
-          <input
-            id="evidenceFile"
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-          >
-
+        <label class="evidence-file-picker" for="evidenceFile">
+          <span class="evidence-upload-icon">📷</span>
+          <strong>Choose a photo</strong>
+          <small>JPG, PNG or WebP — maximum 5 MB</small>
+          <input id="evidenceFile" type="file" accept="image/jpeg,image/png,image/webp">
         </label>
 
-        <div
-          class="evidence-preview hidden"
-          id="evidencePreviewContainer"
-        >
-
-          <img
-            id="evidencePreview"
-            alt="Selected task evidence preview"
-          >
-
+        <div class="evidence-preview hidden" id="evidencePreviewContainer">
+          <img id="evidencePreview" alt="Selected task evidence preview">
           <div class="evidence-preview-details">
-
-            <strong id="evidencePreviewName">
-              Selected photo
-            </strong>
-
-            <small id="evidencePreviewSize">
-              0 MB
-            </small>
-
+            <strong id="evidencePreviewName">Selected photo</strong>
+            <small id="evidencePreviewSize">0 MB</small>
           </div>
-
         </div>
 
-        <p
-          class="evidence-error hidden"
-          id="evidenceError"
-          role="alert"
-        ></p>
+        <p class="evidence-error hidden" id="evidenceError" role="alert"></p>
 
         <div class="modal-actions">
-
-          <button
-            type="button"
-            class="secondary-button"
-            id="cancelEvidenceModal"
-          >
-            Cancel
-          </button>
-
-          <button
-            type="button"
-            class="primary-button"
-            id="uploadEvidenceButton"
-          >
-            Upload Evidence
-          </button>
-
+          <button type="button" class="secondary-button" id="cancelEvidenceModal">Cancel</button>
+          <button type="button" class="primary-button" id="uploadEvidenceButton">Upload Evidence</button>
         </div>
-
       </div>
-
     </div>
-
   </div>
 
-  <!-- PHOTO VIEWER MODAL -->
-
-  <div
-    class="modal-backdrop hidden"
-    id="evidenceViewerModal"
-  >
-
-    <div
-      class="modal evidence-viewer-modal"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="evidenceViewerTitle"
-    >
-
+  <!-- SECURE PHOTO VIEWER -->
+  <div class="modal-backdrop hidden" id="evidenceViewerModal">
+    <div class="modal evidence-viewer-modal" role="dialog" aria-modal="true" aria-labelledby="evidenceViewerTitle">
       <div class="modal-header">
-
         <div>
-          <p class="section-label">
-            TASK EVIDENCE
-          </p>
-
-          <h3 id="evidenceViewerTitle">
-            Photo Evidence
-          </h3>
+          <p class="section-label">TASK EVIDENCE</p>
+          <h3 id="evidenceViewerTitle">Photo Evidence</h3>
         </div>
-
-        <button
-          type="button"
-          class="icon-button"
-          id="closeEvidenceViewer"
-          aria-label="Close photo viewer"
-        >
-          ✕
-        </button>
-
+        <button type="button" class="icon-button" id="closeEvidenceViewer" aria-label="Close photo viewer">✕</button>
       </div>
 
       <div class="evidence-viewer-content">
-
-        <div
-          class="evidence-viewer-loading"
-          id="evidenceViewerLoading"
-        >
-          Loading secure photo...
-        </div>
-
-        <img
-          id="evidenceViewerImage"
-          class="hidden"
-          alt="Task photo evidence"
-        >
-
-        <div
-          class="evidence-viewer-details"
-          id="evidenceViewerDetails"
-        ></div>
-
+        <div class="evidence-viewer-loading" id="evidenceViewerLoading">Loading secure photo...</div>
+        <img id="evidenceViewerImage" class="hidden" alt="Task photo evidence">
+        <div class="evidence-viewer-details" id="evidenceViewerDetails"></div>
       </div>
-
     </div>
-
   </div>
 
-  <!-- TOAST -->
 
   <div
     id="toast"
@@ -1562,8 +1411,6 @@
     role="status"
     aria-live="polite"
   ></div>
-
-  <!-- SCRIPTS -->
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
