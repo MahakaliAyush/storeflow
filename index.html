@@ -47,13 +47,12 @@
 
 <body>
 
-  <!-- LOGIN SCREEN -->
+  <!-- LOGIN -->
 
   <section
     class="login-screen"
     id="loginScreen"
   >
-
     <div class="login-card">
 
       <div class="login-logo">
@@ -123,7 +122,6 @@
       </small>
 
     </div>
-
   </section>
 
   <!-- MOBILE OVERLAY -->
@@ -139,6 +137,8 @@
     class="app-shell hidden"
     id="storeflowApp"
   >
+
+    <!-- SIDEBAR -->
 
     <aside
       class="sidebar"
@@ -236,6 +236,15 @@
         <button
           type="button"
           class="nav-link"
+          data-view="recurringTasks"
+        >
+          <span>⟳</span>
+          Recurring Tasks
+        </button>
+
+        <button
+          type="button"
+          class="nav-link"
           data-view="activityLog"
         >
           <span>↻</span>
@@ -265,16 +274,18 @@
         </p>
 
         <small>
-          StoreFlow v5.0
+          StoreFlow v6.0
         </small>
 
       </div>
 
     </aside>
 
+    <!-- MAIN -->
+
     <main class="main">
 
-      <!-- TOP BAR -->
+      <!-- TOPBAR -->
 
       <header class="topbar">
 
@@ -337,7 +348,7 @@
 
       <section class="content">
 
-        <!-- DASHBOARD -->
+        <!-- DASHBOARD VIEW -->
 
         <section
           id="dashboardView"
@@ -554,7 +565,7 @@
 
         </section>
 
-        <!-- MY TASKS -->
+        <!-- MY TASKS VIEW -->
 
         <section
           id="myTasksView"
@@ -597,7 +608,7 @@
 
         </section>
 
-        <!-- WEEKLY PLANNER -->
+        <!-- WEEKLY PLANNER VIEW -->
 
         <section
           id="plannerView"
@@ -636,7 +647,7 @@
 
         </section>
 
-        <!-- ALL TASKS -->
+        <!-- ALL TASKS VIEW -->
 
         <section
           id="tasksView"
@@ -720,7 +731,7 @@
 
             <select
               id="statusFilter"
-              aria-label="Filter by task status"
+              aria-label="Filter by status"
             >
               <option value="all">
                 All statuses
@@ -765,7 +776,7 @@
 
         </section>
 
-        <!-- COMPLETED -->
+        <!-- COMPLETED VIEW -->
 
         <section
           id="completedView"
@@ -801,7 +812,7 @@
 
         </section>
 
-        <!-- STAFF OVERVIEW -->
+        <!-- STAFF OVERVIEW VIEW -->
 
         <section
           id="staffOverviewView"
@@ -856,7 +867,69 @@
 
         </section>
 
-        <!-- ACTIVITY LOG -->
+        <!-- RECURRING TASKS VIEW -->
+
+        <section
+          id="recurringTasksView"
+          class="view"
+        >
+
+          <div class="page-heading">
+
+            <div>
+              <p class="section-label">
+                AUTOMATED OPERATIONS
+              </p>
+
+              <h3>
+                Recurring Tasks
+              </h3>
+
+              <p>
+                Manage daily, weekly and monthly task schedules.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              class="primary-button open-task-modal"
+            >
+              ＋ Add Recurring Task
+            </button>
+
+          </div>
+
+          <div
+            class="stats-grid"
+            id="recurringTasksSummary"
+          ></div>
+
+          <div class="panel">
+
+            <div class="panel-header">
+
+              <div>
+                <p class="section-label">
+                  RECURRING SCHEDULES
+                </p>
+
+                <h3>
+                  Active and paused schedules
+                </h3>
+              </div>
+
+            </div>
+
+            <div
+              class="task-list"
+              id="recurringTasksList"
+            ></div>
+
+          </div>
+
+        </section>
+
+        <!-- ACTIVITY LOG VIEW -->
 
         <section
           id="activityLogView"
@@ -875,7 +948,7 @@
               </h3>
 
               <p>
-                Review who created, completed, reopened, archived, restored or deleted tasks.
+                Review task and recurring-schedule activity.
               </p>
             </div>
 
@@ -926,6 +999,26 @@
               <option value="deleted">
                 Deleted
               </option>
+
+              <option value="recurring">
+                All recurring activity
+              </option>
+
+              <option value="recurring_created">
+                Recurring schedule created
+              </option>
+
+              <option value="recurring_paused">
+                Recurring schedule paused
+              </option>
+
+              <option value="recurring_resumed">
+                Recurring schedule resumed
+              </option>
+
+              <option value="recurring_generated">
+                Recurring task generated
+              </option>
             </select>
 
           </div>
@@ -955,7 +1048,7 @@
 
         </section>
 
-        <!-- ARCHIVE -->
+        <!-- ARCHIVE VIEW -->
 
         <section
           id="archiveView"
@@ -992,6 +1085,8 @@
         </section>
 
       </section>
+
+      <!-- FOOTER -->
 
       <footer class="site-footer">
 
@@ -1161,6 +1256,44 @@
             </select>
           </label>
 
+          <label id="taskRepeatLabel">
+            Repeat
+
+            <select id="taskRepeat">
+
+              <option value="none">
+                Does not repeat
+              </option>
+
+              <option value="daily">
+                Daily
+              </option>
+
+              <option value="weekly">
+                Weekly
+              </option>
+
+              <option value="monthly">
+                Monthly
+              </option>
+
+            </select>
+          </label>
+
+          <label
+            id="repeatHelpLabel"
+            class="hidden"
+          >
+            Schedule information
+
+            <input
+              id="repeatHelp"
+              type="text"
+              readonly
+              value="Choose the first due date"
+            >
+          </label>
+
         </div>
 
         <div class="modal-actions">
@@ -1188,12 +1321,16 @@
 
   </div>
 
+  <!-- TOAST -->
+
   <div
     id="toast"
     class="toast hidden"
     role="status"
     aria-live="polite"
   ></div>
+
+  <!-- SCRIPTS -->
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>

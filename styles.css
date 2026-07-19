@@ -50,6 +50,7 @@ button {
   display: flex;
   flex-direction: column;
   z-index: 30;
+  overflow-y: auto;
 }
 
 .brand {
@@ -116,6 +117,7 @@ button {
 .nav {
   display: grid;
   gap: 7px;
+  flex-shrink: 0;
 }
 
 .nav-link {
@@ -553,6 +555,30 @@ button {
   color: #2457a7;
 }
 
+.recurring-badge {
+  background: #f4efff;
+  color: #6941c6;
+}
+
+.schedule-active {
+  background: #eaf8f1;
+  color: var(--green);
+}
+
+.schedule-paused {
+  background: #fff6e5;
+  color: var(--amber);
+}
+
+.recurring-schedule-card {
+  border-left-color: #6941c6;
+}
+
+.schedule-is-paused {
+  opacity: 0.72;
+  background: #fafafa;
+}
+
 .task-meta {
   display: flex;
   gap: 13px;
@@ -835,6 +861,25 @@ form textarea {
   gap: 9px;
 }
 
+/* RECURRING FORM */
+
+#repeatHelp {
+  color: var(--muted);
+  background: #f8f9fb;
+}
+
+.recurring-status {
+  font-weight: 800;
+}
+
+.recurring-status.active {
+  color: var(--green);
+}
+
+.recurring-status.paused {
+  color: var(--amber);
+}
+
 /* TOAST */
 
 .toast {
@@ -875,7 +920,6 @@ form textarea {
 /* TABLET */
 
 @media (max-width: 1100px) {
-
   .stats-grid {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -887,13 +931,11 @@ form textarea {
   .filter-bar {
     grid-template-columns: 1fr 1fr;
   }
-
 }
 
 /* MOBILE */
 
 @media (max-width: 760px) {
-
   .sidebar {
     transform: translateX(-100%);
     transition: 0.2s;
@@ -997,13 +1039,11 @@ form textarea {
   .week-board {
     grid-template-columns: repeat(7, 210px);
   }
-
 }
 
 /* SMALL MOBILE */
 
 @media (max-width: 430px) {
-
   .stats-grid {
     grid-template-columns: 1fr;
   }
@@ -1011,7 +1051,6 @@ form textarea {
   .hero-actions {
     width: 100%;
   }
-
 }
 
 /* LOGIN SCREEN */
